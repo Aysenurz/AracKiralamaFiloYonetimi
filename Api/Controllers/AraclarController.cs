@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Models;
-using Api.Models.Dto;   // ⭐ BUNU EKLEDİK — DTO burada!
+using Api.Models.Dto;
 
 namespace Api.Controllers
 {
@@ -16,106 +16,121 @@ namespace Api.Controllers
             _context = context;
         }
 
-        // GET: api/araclar
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
+        // ✅ NAVBAR -> ARAÇLAR (MODEL KATALOĞU)
+        [HttpGet("GetAllModels")]
+        public async Task<IActionResult> GetAllModels()
         {
-            return Ok(await _context.Araclars.ToListAsync());
+            var liste = await _context.AracModelBilgileris
+                .Select(m => new AracDto
+                {
+                    ModelId = m.ModelId,
+                    Marka = m.Marka,
+                    Model = m.Model,
+                    Segment = m.Segment,
+                    YakitTipi = m.YakitTipi,
+                    VitesTipi = m.VitesTipi,
+                    GunlukFiyat = m.GunlukFiyat,
+                    ResimUrl = m.ResimUrl
+                })
+                .ToListAsync();
+
+            return Ok(liste);
         }
 
-        // GET: api/araclar/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        // ✅ TARİH + ŞUBE → UYGUN ARAÇLAR
+        [HttpGet("GetByFilter")]
+        public async Task<IActionResult> GetByFilter(int subeId, string alis, string donus)
         {
-            var item = await _context.Araclars.FindAsync(id);
-            if (item == null) return NotFound();
-            return Ok(item);
+            if (!DateTime.TryParse(alis, out _))
+                return BadRequest("Alış tarihi hatalı");
+
+            if (!DateTime.TryParse(donus, out _))
+                return BadRequest("Dönüş tarihi hatalı");
+
+            var liste = await _context.Araclars
+                .Where(a => a.GuncelSubeId == subeId)
+                .Join(
+                    _context.AracModelBilgileris,
+                    a => a.ModelId,
+                    m => m.ModelId,
+                    (a, m) => new AracDto
+                    {
+                        AracId = a.AracId,
+                        ModelId = m.ModelId,
+                        Marka = m.Marka,
+                        Model = m.Model,
+                        Segment = m.Segment,
+                        YakitTipi = m.YakitTipi,
+                        VitesTipi = m.VitesTipi,
+                        GunlukFiyat = m.GunlukFiyat,
+                        ResimUrl = m.ResimUrl
+                    }
+                )
+                .GroupBy(x => x.ModelId)
+                .Select(g => g.First())
+                .ToListAsync();
+
+            return Ok(liste);
         }
 
-        // POST: api/araclar
-        [HttpPost]
-        public async Task<IActionResult> Create(AracCreateDto dto)
+        // ✅ MODEL → 1 ADET FİZİKSEL ARAÇ (DETAYA GİTMEK İÇİN)
+        [HttpGet("GetOneByModel/{modelId}")]
+        public async Task<IActionResult> GetOneByModel(int modelId)
         {
-            var entity = new Araclar
-            {
-                Plaka = dto.Plaka,
-                Renk = dto.Renk,
-                Durum = dto.Durum,
-                ModelId = dto.ModelId,
-                GuncelSubeId = dto.GuncelSubeId,
-                AlisTarihi = DateTime.Now
-            };
+            var arac = await _context.Araclars
+                .Where(a => a.ModelId == modelId)
+                .Join(
+                    _context.AracModelBilgileris,
+                    a => a.ModelId,
+                    m => m.ModelId,
+                    (a, m) => new
+                    {
+                        a.AracId,
+                        m.ModelId,
+                        m.Marka,
+                        m.Model,
+                        m.GunlukFiyat,
+                        m.ResimUrl,
+                        m.Segment,
+                        m.VitesTipi,
+                        m.YakitTipi,
+                        m.Yil
+                    }
+                )
+                .FirstOrDefaultAsync();
 
-            _context.Araclars.Add(entity);
-            await _context.SaveChangesAsync();
-
-            return Ok(entity);
+            if (arac == null) return NotFound();
+            return Ok(arac);
         }
 
-        // PUT: api/araclar/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, AracCreateDto dto)
+        // ✅ DETAY SAYFASI (GERÇEK ARAÇ)
+        [HttpGet("detail/{id}")]
+        public async Task<IActionResult> GetAracDetay(int id)
         {
-            var entity = await _context.Araclars.FindAsync(id);
-            if (entity == null) return NotFound();
+            var arac = await _context.Araclars
+                .Where(a => a.AracId == id)
+                .Join(
+                    _context.AracModelBilgileris,
+                    a => a.ModelId,
+                    m => m.ModelId,
+                    (a, m) => new
+                    {
+                        a.AracId,
+                        a.GuncelSubeId,
+                        m.Marka,
+                        m.Model,
+                        m.Yil,
+                        m.GunlukFiyat,
+                        m.ResimUrl,
+                        m.Segment,
+                        m.VitesTipi,
+                        m.YakitTipi
+                    }
+                )
+                .FirstOrDefaultAsync();
 
-            entity.Plaka = dto.Plaka;
-            entity.Renk = dto.Renk;
-            entity.Durum = dto.Durum;
-            entity.ModelId = dto.ModelId;
-            entity.GuncelSubeId = dto.GuncelSubeId;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(entity);
+            if (arac == null) return NotFound();
+            return Ok(arac);
         }
-
-        // DELETE: api/araclar/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var item = await _context.Araclars.FindAsync(id);
-            if (item == null) return NotFound();
-
-            _context.Araclars.Remove(item);
-            await _context.SaveChangesAsync();
-            return Ok("Araç silindi");
-        }
-        // GET: api/araclar/GetByFilter?subeId=1&alis=2024-12-10&donus=2024-12-15
-[HttpGet("GetByFilter")]
-public async Task<IActionResult> GetByFilter(int subeId, string alis, string donus)
-{
-    // Tarihleri parse et
-    if (!DateTime.TryParse(alis, out DateTime alisTarihi))
-        return BadRequest("Alış tarihi hatalı!");
-
-    if (!DateTime.TryParse(donus, out DateTime donusTarihi))
-        return BadRequest("Dönüş tarihi hatalı!");
-
-    var liste = await _context.Araclars
-        .Where(a => a.GuncelSubeId == subeId)
-        .Join(
-            _context.AracModelBilgileris,
-            a => a.ModelId,
-            m => m.ModelId,
-            (a, m) => new AracDto
-            {
-                AracId = a.AracId,
-                ModelId = m.ModelId,
-                Marka = m.Marka,
-                Model = m.Model,
-                Segment = m.Segment,
-                YakitTipi = m.YakitTipi,
-                VitesTipi = m.VitesTipi,
-                GunlukFiyat = m.GunlukFiyat,
-                ResimUrl = m.ResimUrl
-            }
-        )
-        .ToListAsync();
-
-    return Ok(liste);
-}
-
-
     }
 }

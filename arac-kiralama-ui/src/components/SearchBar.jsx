@@ -10,7 +10,7 @@ export default function SearchBar() {
   const [alis, setAlis] = useState("");
   const [donus, setDonus] = useState("");
 
-  // ŞUBELERİ API'DEN ÇEK
+  // ŞUBELERİ GETİR
   useEffect(() => {
     api
       .get("/Subeler")
@@ -24,24 +24,23 @@ export default function SearchBar() {
       return;
     }
 
-   navigate(`/araclar?subeId=${subeId}&alis=${alis}&donus=${donus}`);
-
+    // ✅ DOĞRU SAYFA
+    navigate(
+      `/uygun-araclar?subeId=${subeId}&alis=${alis}&donus=${donus}`
+    );
   };
 
   return (
     <div className="bg-white p-4 rounded-xl flex gap-3 shadow-lg w-full max-w-5xl">
 
-      {/* ⭐ ŞUBE DROPDOWN – DÜZELTİLMİŞ HALİ */}
+      {/* ŞUBE */}
       <select
         className="w-full bg-white text-black p-3 rounded-md border border-gray-300 shadow-sm 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+        focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
         value={subeId}
         onChange={(e) => setSubeId(e.target.value)}
       >
-        <option value="" className="text-gray-500">
-          Kiralama Noktası Seçin
-        </option>
-
+        <option value="">Kiralama Noktası Seçin</option>
         {subeler.map((s) => (
           <option key={s.subeId} value={s.subeId}>
             {s.subeAdi}
@@ -49,29 +48,27 @@ export default function SearchBar() {
         ))}
       </select>
 
-      {/* ALIŞ TARİHİ */}
+      {/* ALIŞ */}
       <input
         type="date"
-        className="bg-white text-black p-3 rounded-md border border-gray-300 shadow-sm 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={alis}
         onChange={(e) => setAlis(e.target.value)}
+        className="bg-white text-black p-3 rounded-md border border-gray-300 shadow-sm"
       />
 
-      {/* DÖNÜŞ TARİHİ */}
+      {/* DÖNÜŞ */}
       <input
         type="date"
-        className="bg-white text-black p-3 rounded-md border border-gray-300 shadow-sm 
-                   focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={donus}
         onChange={(e) => setDonus(e.target.value)}
+        className="bg-white text-black p-3 rounded-md border border-gray-300 shadow-sm"
       />
 
-      {/* BUTTON */}
+      {/* BUTON */}
       <button
         onClick={araclariGoster}
         className="bg-blue-600 text-white px-6 rounded-md font-semibold 
-                   hover:bg-blue-700 transition"
+        hover:bg-blue-700 transition"
       >
         Araçları Göster
       </button>

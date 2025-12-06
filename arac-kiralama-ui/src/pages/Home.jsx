@@ -6,7 +6,7 @@ export default function Home() {
     <div className="relative w-full min-h-screen bg-[#0E1A2B] text-white">
 
       {/* ABSTRACT BACKGROUND SHAPES */}
-      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-10 -left-10 w-72 h-72 bg-blue-700 opacity-20 rounded-full blur-3xl"></div>
         <div className="absolute top-40 -right-10 w-96 h-96 bg-indigo-600 opacity-10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-500 opacity-10 rounded-full blur-2xl"></div>
