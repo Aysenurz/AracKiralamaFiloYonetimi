@@ -1,0 +1,91 @@
+##############################
+# ASP.NET Core / C# Projeleri
+##############################
+
+# Build klasörleri
+bin/
+obj/
+
+# Kullanıcı ayar dosyaları
+*.user
+*.userosscache
+*.suo
+
+# Publish çıktıları
+*.exe
+*.dll
+*.pdb
+*.cache
+*.log
+
+# Rider, VS ve diğer IDE dosyaları
+.vs/
+.idea/
+*.sqlite
+*.db
+
+##############################
+# VS Code
+##############################
+
+# Kişisel VS Code ayarları
+.vscode/
+
+##############################
+# Ortak Ayarlar
+##############################
+
+# Environment (gizli bilgiler)
+.env
+*.env
+appsettings.Local.json
+appsettings.Development.Local.json
+
+# Log dosyaları
+logs/
+*.log
+
+# Temporary dosyalar
+*.tmp
+*.temp
+*.DS_Store
+Thumbs.db
+
+##############################
+# Node.js / React (ileride ekleyebilirsin)
+##############################
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+##############################
+# Paket Yönetimi
+##############################
+
+# Paket restore edilebilir dosyalar
+*.nupkg
+*.snupkg
+packages/
+
+# Lock files (derleme sistemine göre)
+project.lock.json
+project.fragment.lock.json
+
+##############################
+# SQL ve Backup Dosyaları
+##############################
+
+*.mdf
+*.ldf
+*.bak
+*.trn
+
+##############################
+# Build Çıktıları
+##############################
+
+/publish/
+/dist/
+/out/
