@@ -1,28 +1,40 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
+  const navigate = useNavigate();
+  const kullanici = JSON.parse(localStorage.getItem("kullanici")); // ✅ En üste aldık
+
+  const handleLogout = () => {
+    localStorage.removeItem("kullanici");
+    window.location.reload();
+  };
+
   return (
     <nav className="fixed top-0 left-0 w-full bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] shadow-lg z-50">
       <div className="max-w-[90rem] mx-auto px-10 py-5 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
+        {/* LOGO */}
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate("/")}
+        >
           <img
             src="https://e7.pngegg.com/pngimages/50/859/png-clipart-police-car-motor-vehicle-computer-icons-car.png"
             alt="logo"
-            className="w-10 h-10 object-contain drop-shadow-md"
+            className="w-11 h-11 object-contain drop-shadow-md rounded-full bg-white p-1"
           />
           <h1 className="text-2xl font-extrabold text-white tracking-wide">
             <span className="text-blue-400">Filo</span>Rent
           </h1>
         </div>
 
-        {/* Menü */}
+        {/* MENÜ */}
         <div className="flex items-center gap-10">
           {[
             ["Ana Sayfa", "/"],
-            ["Araçlar", "/araclar"],
+            ["Araç Filosu", "/araclar"],
             ["Kiralama Noktaları", "/subeler"],
             ["Kampanyalar", "/kampanyalar"],
+            ["Yardım", "/yardim"],
           ].map(([name, path]) => (
             <NavLink
               key={path}
@@ -30,20 +42,50 @@ export default function Navbar() {
               className={({ isActive }) =>
                 `relative text-lg font-medium transition duration-300 ${
                   isActive
-                    ? "text-blue-400 after:w-full"
-                    : "text-gray-200 hover:text-blue-300"
-                } after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:bg-blue-400 after:transition-all after:duration-300 after:w-0 hover:after:w-full`
+                    ? "text-blue-400"
+                    : "text-white hover:text-blue-400"
+                }`
               }
             >
               {name}
             </NavLink>
           ))}
-        </div>
 
-        {/* Giriş Butonu */}
-        <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-5 py-2 rounded-xl shadow-md transition duration-300 hover:scale-105">
-          Giriş Yap
-        </button>
+          {/* SAĞ TARAF: GİRİŞ / ÜYE OL veya PROFİL / ÇIKIŞ */}
+          <div className="flex items-center gap-3 ml-6">
+            {!kullanici ? (
+              <>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow transition"
+                >
+                  Giriş Yap
+                </button>
+                <button
+                  onClick={() => navigate("/register")}
+                  className="px-4 py-2 bg-transparent border border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white rounded-lg shadow transition"
+                >
+                  Üye Ol
+                </button>
+              </>
+            ) : (
+              <>
+                <NavLink
+                  to="/profil"
+                  className="px-4 py-2 text-white hover:text-blue-400 font-semibold"
+                >
+                  Profilim
+                </NavLink>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow transition"
+                >
+                  Çıkış Yap
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </nav>
   );

@@ -57,5 +57,36 @@ namespace Api.Controllers
             await _context.SaveChangesAsync();
             return Ok("Silindi");
         }
+ // ✅ Üye Ol (Register)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] Musteriler model)
+        {
+            // Aynı e-posta veya TC kayıtlı mı kontrol et
+            var existing = await _context.Musterilers
+                .FirstOrDefaultAsync(x => x.Email == model.Email || x.TcNo == model.TcNo);
+
+            if (existing != null)
+                return BadRequest("Bu e-posta veya TC numarası zaten kayıtlı!");
+
+            _context.Musterilers.Add(model);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Üyelik başarıyla oluşturuldu!", model });
+        }
+
+        [HttpPost("login")]
+public async Task<IActionResult> Login([FromBody] Musteriler login)
+{
+    var musteri = await _context.Musterilers
+        .FirstOrDefaultAsync(x => x.Email == login.Email && x.TcNo == login.TcNo);
+
+    if (musteri == null)
+        return Unauthorized("Email veya TC No hatalı!");
+
+    return Ok(musteri);
+}
+
+
+
     }
 }

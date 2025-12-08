@@ -14,13 +14,13 @@ export default function AracDetay() {
   const [arac, setArac] = useState(null);
   const [thumbs, setThumbs] = useState([]);
   const [activeImg, setActiveImg] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const { data } = await api.get(`/Araclar/detail/${id}`);
         setArac(data);
-        // küçük bir galeri efekti (tek görselin varyasyonları)
         const base = data?.resimUrl || "/car.png";
         setThumbs([base, base, base, base]);
         setActiveImg(base);
@@ -30,6 +30,35 @@ export default function AracDetay() {
     })();
   }, [id]);
 
+  // 🚗 Kiralama kaydı oluşturma fonksiyonu
+  const handleKiralamaYap = async () => {
+    if (!arac) return;
+    setLoading(true);
+
+    try {
+      const kiralama = {
+        MusteriID: 1, // Şimdilik test için sabit müşteri (giriş sistemi olunca dinamik yapacağız)
+        AracID: arac.modelId,
+        AlisSubeID: 1,
+        TeslimSubeID: 1,
+        AlisTarihi: alis || new Date().toISOString(),
+        TahminiTeslimTarihi: donus || new Date(Date.now() + 2 * 86400000).toISOString(), // +2 gün
+        GunlukUcret: arac.gunlukFiyat,
+        Durum: "Devam Ediyor",
+      };
+
+      await api.post("/Kiralamalar/Ekle", kiralama);
+
+      alert("Kiralama başarıyla oluşturuldu!");
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      alert("Kiralama oluşturulamadı!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!arac) {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-50">
@@ -38,24 +67,15 @@ export default function AracDetay() {
     );
   }
 
-  // 👇 Gün sayısı ve toplam fiyat hesaplaması
-  const gunSayisi =
-    alis && donus
-      ? Math.max(1, Math.ceil((new Date(donus) - new Date(alis)) / 86400000))
-      : 1;
-
-  const toplamFiyat = (arac.gunlukFiyat || 0) * gunSayisi;
-  // 👆 toplamFiyat'ı navigate içinde kullanacağız
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        {/* Başlık / breadcrumb hissi */}
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-24 px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Başlık */}
         <div className="mb-6">
           <p className="text-sm text-gray-500">
             Araçlar / {arac.marka} / <span className="text-gray-800">{arac.model}</span>
           </p>
-          <h1 className="text-3xl md:text-4xl font-bold mt-1">
+          <h1 className="text-4xl font-bold mt-2">
             {arac.marka} {arac.model}
           </h1>
           <p className="text-gray-600 mt-1">
@@ -64,7 +84,7 @@ export default function AracDetay() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Sol: Galeri */}
+          {/* Sol taraf */}
           <div className="lg:col-span-7">
             <div className="bg-white rounded-2xl shadow-sm p-4">
               <img
@@ -87,15 +107,15 @@ export default function AracDetay() {
               </div>
             </div>
 
-            {/* Özellikler */}
+            {/* Özellik kutuları */}
             <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
-                ["👤 5 Kişi", ""],
-                ["🚪 4 Kapı", ""],
-                ["🧳 2 Büyük Bavul", ""],
-                ["❄️ Klima", ""],
-                ["🛡️ Kasko Dahil", ""],
-                ["⛽ Yakıt Tasarruflu", ""],
+                ["👤 5 Kişi"],
+                ["🚪 4 Kapı"],
+                ["🧳 2 Büyük Bavul"],
+                ["❄️ Klima"],
+                ["🛡️ Kasko Dahil"],
+                ["⛽ Yakıt Tasarruflu"],
               ].map(([t], idx) => (
                 <div
                   key={idx}
@@ -105,22 +125,9 @@ export default function AracDetay() {
                 </div>
               ))}
             </div>
-
-            {/* Avantajlar */}
-            <div className="mt-8 bg-green-50 border border-green-100 rounded-2xl p-6">
-              <h3 className="font-semibold text-green-900 mb-3">
-                Neden bu araç?
-              </h3>
-              <ul className="text-green-800 space-y-2">
-                <li>✔ Şehir içi ve uzun yol için ideal</li>
-                <li>✔ Bakımlı ve temiz araç garantisi</li>
-                <li>✔ Sürpriz ücret yok</li>
-                <li>✔ İptal ve değişiklik kolaylığı</li>
-              </ul>
-            </div>
           </div>
 
-          {/* Sağ: Sticky fiyat/rezervasyon */}
+          {/* Sağ taraf */}
           <aside className="lg:col-span-5">
             <div className="lg:sticky lg:top-8">
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
@@ -129,46 +136,19 @@ export default function AracDetay() {
                     <span className="text-gray-600">Günlük Fiyat</span>
                     <span className="font-semibold">{arac.gunlukFiyat} TL</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Gün Sayısı</span>
-                    <span className="font-semibold">{gunSayisi}</span>
-                  </div>
-                  {alis && donus && (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Alış</span>
-                        <span className="font-medium">{alis}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Dönüş</span>
-                        <span className="font-medium">{donus}</span>
-                      </div>
-                    </>
-                  )}
-                  <hr className="my-3" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold">Toplam</span>
-                    <span className="text-xl font-extrabold text-blue-600">
-                      {toplamFiyat} TL
-                    </span>
-                  </div>
                 </div>
 
+                {/* Kiralama butonu */}
                 <button
-                  onClick={() => {
-                    const resim = encodeURIComponent(arac.resimUrl || "/car.png");
-                    // 👇 Burada 'toplam' yerine doğru değişken olan 'toplamFiyat' kullanıldı.
-                    navigate(
-                      `/rezervasyon?marka=${encodeURIComponent(arac.marka)}&model=${encodeURIComponent(arac.model)}&alis=${alis}&donus=${donus}&toplam=${toplamFiyat}&resim=${resim}`
-                    );
-                  }}
-                  className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg text-lg"
+                  onClick={handleKiralamaYap}
+                  disabled={loading}
+                  className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-semibold"
                 >
-                  Kiralamayı Onayla
+                  {loading ? "Kiralama yapılıyor..." : "Aracı Kirala"}
                 </button>
 
-                <p className="text-xs text-gray-500 mt-3">
-                  * Temel güvence dahildir. Teslimde ehliyet ve kredi kartı ibrazı gerekir.
+                <p className="text-xs text-gray-500 mt-3 text-center">
+                  * Kiralama sonrası bilgiler veritabanına kaydedilir.
                 </p>
               </div>
             </div>

@@ -67,7 +67,7 @@ namespace Api.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            if (item == null) 
+            if (item == null)
                 return NotFound();
 
             return Ok(item);
@@ -77,43 +77,46 @@ namespace Api.Controllers
         // POST - Create
         // ---------------------------------------------------------
         [HttpPost]
-        public async Task<IActionResult> Create(FaturaCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] FaturaCreateDto dto)
         {
-            var entity = new Faturalar
+            if (dto == null)
+                return BadRequest("Fatura verisi gönderilmedi.");
+
+            var fatura = new Faturalar
             {
-                KiralamaId = dto.KiralamaId,
+                KiralamaId = dto.KiralamaId,  // ✅ doğru property adı
                 Tutar = dto.Tutar,
-                FaturaTarihi = DateTime.Now
+                FaturaTarihi = DateTime.Now   // ✅ otomatik tarih
             };
 
-            _context.Faturalars.Add(entity);
+            _context.Faturalars.Add(fatura);
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                message = "Fatura oluşturuldu.",
-                entity
-            });
+            return Ok(fatura);
         }
 
         // ---------------------------------------------------------
         // PUT - Update
         // ---------------------------------------------------------
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, FaturaCreateDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] FaturaCreateDto dto)
         {
+            if (dto == null)
+                return BadRequest("Fatura verisi gönderilmedi.");
+
             var entity = await _context.Faturalars.FindAsync(id);
-            if (entity == null) 
+            if (entity == null)
                 return NotFound();
 
             entity.KiralamaId = dto.KiralamaId;
             entity.Tutar = dto.Tutar;
+            entity.FaturaTarihi = DateTime.Now; // güncellemede de tazelensin istersen
 
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
-                message = "Fatura güncellendi.",
+                message = "✅ Fatura güncellendi.",
                 entity
             });
         }
@@ -125,13 +128,13 @@ namespace Api.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var item = await _context.Faturalars.FindAsync(id);
-            if (item == null) 
+            if (item == null)
                 return NotFound();
 
             _context.Faturalars.Remove(item);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Silindi" });
+            return Ok(new { message = "🗑️ Fatura silindi." });
         }
     }
 }

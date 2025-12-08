@@ -7,8 +7,14 @@ import TumAraclar from "./pages/TumAraclar";  // Tüm araçlar
 import AracDetay from "./pages/AracDetay";
 import Rezervasyon from "./pages/Rezervasyon";
 import Odeme from "./pages/Odeme";
-
-
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Subeler from "./pages/Subeler";
+import Kampanyalar from "./pages/Kampanyalar";
+import Yardim from "./pages/Yardim";
+import Profil from "./pages/Profil";
+import Faturalar from "./pages/Faturalar";
+import FaturaSonuc from "./pages/FaturaSonuc";
 function App() {
   return (
     <BrowserRouter>
@@ -32,6 +38,15 @@ function App() {
         <Route path="/rezervasyon" element={<Rezervasyon />} />
 
         <Route path="/odeme" element={<Odeme />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/subeler" element={<Subeler />} /> 
+
+        <Route path="/kampanyalar" element={<Kampanyalar />} />
+        <Route path="/yardim" element={<Yardim />} />
+        <Route path="/profil" element={<Profil />} />
+        <Route path="/faturalar" element={<Faturalar />} />
+        <Route path="/fatura-sonuc" element={<FaturaSonuc />} />
       </Routes>
     </BrowserRouter>
   );

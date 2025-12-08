@@ -1,8 +1,23 @@
-import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import api from "../services/api";
 
 export default function Odeme() {
+  const navigate = useNavigate();
   const { state } = useLocation();
+
+  const {
+    marka,
+    model,
+    resim,
+    toplam: orijinalTutar = 0,
+    segment,
+    gunSayisi = 1,
+    alis,
+    donus,
+    aracId,
+  } = state || {};
+
   const [cardInfo, setCardInfo] = useState({
     name: "",
     number: "",
@@ -10,61 +25,248 @@ export default function Odeme() {
     cvc: "",
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCardInfo((prev) => ({ ...prev, [name]: value }));
+  const [kuponKodu, setKuponKodu] = useState("");
+  const [uygulananKupon, setUygulananKupon] = useState(null);
+  const [indirim, setIndirim] = useState(0);
+  const [yeniToplam, setYeniToplam] = useState(orijinalTutar);
+
+  // ✅ Kampanyalar
+  const kampanyalar = [
+    {
+      kod: "SUV20",
+      segment: "SUV",
+      tip: "yuzde",
+      deger: 20,
+      baslik: "Yaz İndirimi – SUV’larda %20",
+      aciklama: "Yaz aylarına özel SUV kiralamalarında %20 indirim.",
+    },
+    {
+      kod: "SEDAN1000",
+      segment: "Sedan",
+      tip: "tutar",
+      deger: 1000,
+      baslik: "Hafta Sonu Fırsatı – Sedan 1000 TL İndirim",
+      aciklama: "Cuma–Pazar arası kiralamalarda 1000 TL indirim.",
+    },
+    {
+      kod: "ERKEN15",
+      segment: "Hepsi",
+      tip: "yuzde",
+      deger: 15,
+      baslik: "Erken Rezervasyon – %15 İndirim",
+      aciklama: "3 günden uzun kiralamalarda %15 erken rezervasyon avantajı.",
+    },
+  ];
+
+  // Otomatik uygun kupon
+  useEffect(() => {
+    let uygun = kampanyalar.find((k) =>
+      gunSayisi > 3
+        ? k.kod === "ERKEN15"
+        : segment?.toLowerCase() === k.segment.toLowerCase()
+    );
+    if (uygun) setKuponKodu(uygun.kod);
+  }, [segment, gunSayisi]);
+
+  const uygulaKupon = (kod) => {
+    const kampanya = kampanyalar.find((k) => k.kod === kod);
+    if (!kampanya) return alert("❌ Geçersiz kupon kodu.");
+
+    if (
+      kampanya.segment.toLowerCase() !== "hepsi" &&
+      kampanya.segment.toLowerCase() !== segment?.toLowerCase()
+    ) {
+      return alert(
+        `❌ Bu kupon yalnızca ${kampanya.segment} segmentindeki araçlarda geçerlidir.`
+      );
+    }
+
+    const indirimTutari =
+      kampanya.tip === "yuzde"
+        ? (orijinalTutar * kampanya.deger) / 100
+        : kampanya.deger;
+
+    setIndirim(indirimTutari);
+    setYeniToplam(orijinalTutar - indirimTutari);
+    setUygulananKupon(kampanya);
+    alert(`🎉 ${kampanya.kod} kuponu başarıyla uygulandı!`);
   };
 
-  const handleSubmit = (e) => {
+  // 💳 Kart input kontrolü
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    let newValue = value;
+
+    if (name === "expiry") {
+      newValue = value.replace(/[^\d]/g, "");
+      if (newValue.length > 2)
+        newValue = newValue.slice(0, 2) + "/" + newValue.slice(2, 4);
+    }
+
+    setCardInfo((prev) => ({ ...prev, [name]: newValue }));
+  };
+
+  // ✅ Tarih formatı helper
+  const formatDate = (val) => {
+    if (!val) return new Date().toISOString(); // eğer boşsa bugünü al
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  };
+
+  // 💾 Ödeme işlemi
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("🎉 Ödeme başarılı! Rezervasyonunuz onaylandı.");
+
+    try {
+      // ✅ Kullanıcı bilgisi (garantili)
+      const kullaniciData = localStorage.getItem("kullanici");
+      let kullanici = { id: 1 }; // fallback
+      if (kullaniciData) {
+        try {
+          const parsed = JSON.parse(kullaniciData);
+          if (parsed?.id) kullanici = parsed;
+        } catch {
+          console.warn("⚠️ Kullanıcı JSON parse edilemedi, id:1 kullanılacak");
+        }
+      }
+
+      const kiralama = {
+        AracId: Number(aracId) || 1,
+        MusteriId: Number(kullanici.id) || 1, // ✅ null olmaz
+        AlisSubeId: 1,
+        TeslimSubeId: 1,
+        AlisTarihi: formatDate(alis),
+        TahminiTeslimTarihi: formatDate(donus),
+        GunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)), // ✅ decimal format
+        Durum: "Devam Ediyor",
+      };
+
+      console.log("📦 Gönderilen kiralama:", JSON.stringify(kiralama, null, 2));
+
+      // ✅ 1️⃣ Kiralama kaydı oluştur
+      const kiralamaRes = await api.post("/Kiralamalar", kiralama);
+      const yeniKiralama = kiralamaRes.data;
+
+      // ✅ 2️⃣ Fatura oluştur (DTO'ya göre sadece KiralamaId ve Tutar gönderiyoruz)
+      const fatura = {
+        KiralamaId: yeniKiralama.kiralamaId || yeniKiralama.KiralamaID,
+        Tutar: yeniToplam,
+      };
+
+      console.log("📄 Fatura gönderiliyor:", fatura);
+
+      const faturaRes = await api.post("/Faturalar", fatura);
+      const yeniFatura = faturaRes.data;
+
+      console.log("✅ Yeni fatura kaydedildi:", yeniFatura);
+
+      // ✅ 3️⃣ Fatura sonucu sayfasına yönlendir
+      alert("🎉 Ödeme başarılı! Fatura oluşturuldu.");
+      navigate("/fatura-sonuc", {
+        state: {
+          kiralama: yeniKiralama,
+          fatura: yeniFatura,
+        },
+      });
+    } catch (err) {
+      console.error("❌ Hata:", err);
+      alert("❌ İşlem başarısız. Lütfen tekrar deneyin.");
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-8 py-16">
-      {/* 🔥 Beyaz ana kart — daha büyük ve ekranın ortasında */}
       <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[90rem] p-16">
-        {/* Başlık */}
         <h1 className="text-5xl font-bold text-center mb-14 text-gray-800 tracking-tight">
           💳 Ödeme Sayfası
         </h1>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
-          {/* Sol kısım: Araç özeti */}
-          <div className="bg-gray-50 border border-gray-200 rounded-3xl p-10 flex flex-col justify-between shadow-sm">
+          {/* Sol Kısım */}
+          <div className="bg-gray-50 border border-gray-200 rounded-3xl p-10 shadow-sm flex flex-col gap-8 overflow-y-auto max-h-[80vh]">
             <div className="flex items-center gap-8">
               <img
-                src={state?.resim}
-                alt={`${state?.marka} ${state?.model}`}
+                src={resim}
+                alt={`${marka} ${model}`}
                 className="w-60 h-40 object-cover rounded-2xl shadow-md"
               />
               <div>
                 <p className="font-semibold text-3xl text-gray-800">
-                  {state?.marka} {state?.model}
+                  {marka} {model}
                 </p>
-                <p className="text-gray-600 mt-3 text-2xl">
-                  Tutar:{" "}
+                <p className="text-gray-600 text-xl mt-2">
+                  Segment: <b>{segment || "Belirtilmemiş"}</b>
+                </p>
+                <p className="text-gray-600 text-xl">
+                  Süre: <b>{gunSayisi}</b> gün
+                </p>
+                <p className="text-gray-600 text-2xl mt-2">
+                  Araç Ücreti:{" "}
                   <span className="text-blue-600 font-bold">
-                    {state?.toplam} TL
+                    {orijinalTutar} TL
+                  </span>
+                </p>
+                {uygulananKupon && (
+                  <p className="mt-2 text-green-600 text-xl font-semibold">
+                    {uygulananKupon.kod} kuponu uygulandı (−{indirim} TL)
+                  </p>
+                )}
+                <p className="text-gray-800 text-2xl font-bold mt-2">
+                  Genel Toplam:{" "}
+                  <span className="text-blue-700">
+                    {yeniToplam.toFixed(2)} TL
                   </span>
                 </p>
               </div>
             </div>
 
-            <div className="mt-10">
+            {/* Kampanyalar */}
+            <div>
               <h3 className="font-semibold text-2xl text-gray-700 mb-4">
-                Avantajlar
+                Kampanyalar
               </h3>
-              <ul className="text-gray-600 space-y-3 text-lg">
-                <li>✔ Ücretsiz iptal ve değişiklik hakkı</li>
-                <li>✔ Kasko & sigorta koruması</li>
-                <li>✔ Online güvenli ödeme sistemi</li>
-                <li>✔ 7/24 müşteri desteği</li>
-              </ul>
+              <div className="flex gap-6 overflow-x-auto pb-4">
+                {kampanyalar.map((k) => (
+                  <div
+                    key={k.kod}
+                    className={`min-w-[280px] bg-white rounded-2xl border shadow-sm p-5 cursor-pointer transition transform hover:scale-105 ${
+                      k.kod === kuponKodu
+                        ? "border-green-500 ring-2 ring-green-300"
+                        : "border-gray-200"
+                    }`}
+                    onClick={() => setKuponKodu(k.kod)}
+                  >
+                    <h4 className="text-lg font-semibold text-blue-600 mb-2">
+                      {k.baslik}
+                    </h4>
+                    <p className="text-gray-600 text-sm mb-3">{k.aciklama}</p>
+                    <p className="text-sm font-bold text-green-600">
+                      Kupon Kodu: {k.kod}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex gap-4">
+                <input
+                  type="text"
+                  value={kuponKodu}
+                  onChange={(e) => setKuponKodu(e.target.value.toUpperCase())}
+                  placeholder="Kupon kodu giriniz"
+                  className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => uygulaKupon(kuponKodu)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold"
+                >
+                  Uygula
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Sağ kısım: Kart bilgileri formu */}
+          {/* Sağ Kısım */}
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>
               <label className="block text-gray-700 mb-3 font-medium text-xl">
@@ -136,15 +338,9 @@ export default function Odeme() {
             >
               Ödemeyi Tamamla
             </button>
-
-            <p className="text-base text-gray-500 mt-5 text-center">
-              * 3D Secure desteği bulunmaktadır. Bilgileriniz şifrelenerek
-              güvenli şekilde işlenir.
-            </p>
           </form>
         </div>
 
-        {/* Yardımcı input stili */}
         <style>{`
           .input {
             @apply w-full border border-gray-300 rounded-xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;

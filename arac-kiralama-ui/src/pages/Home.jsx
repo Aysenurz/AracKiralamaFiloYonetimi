@@ -6,7 +6,7 @@ export default function Home() {
     <div className="relative w-full min-h-screen bg-[#0E1A2B] text-white">
 
       {/* ABSTRACT BACKGROUND SHAPES */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-10 -left-10 w-72 h-72 bg-blue-700 opacity-20 rounded-full blur-3xl"></div>
         <div className="absolute top-40 -right-10 w-96 h-96 bg-indigo-600 opacity-10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-500 opacity-10 rounded-full blur-2xl"></div>
@@ -16,34 +16,111 @@ export default function Home() {
       <div className="relative z-10 max-w-6xl mx-auto px-6 pt-28 pb-16 text-center">
 
         {/* TITLE */}
-        <h1 className="text-4xl font-bold mb-4">
-          Uygun Fiyatlarla Araç Kiralayın
-        </h1>
-
+        <h1 className="text-4xl font-bold mb-4">Uygun Fiyatlarla Araç Kiralayın</h1>
         <p className="text-gray-300 mb-10 text-lg">
           FiloRent ile hızlı, kolay ve güvenilir araç kiralama.
         </p>
 
-        {/* ⭐ SEARCH BAR (Dropdown dahil) */}
+        {/* ⭐ SEARCH BAR */}
         <div className="flex justify-center">
           <SearchBar />
         </div>
-        {/* --- BİLGİLENDİRME BÖLÜMÜ --- */}
+
+  {/* --- SENİN MEVCUT YENİDEN TANIMLAMA VE DEVAMI --- */}
         <div className="bg-white text-black mt-20 px-8 py-20 rounded-2xl shadow-lg max-w-6xl mx-auto">
-
-        <h2 className="text-4xl font-bold mb-6 text-center">FiloRent ile Araç Kiralama Deneyimini Yeniden Tanımlayın</h2>
-
-        <p className="text-gray-900 leading-relaxed text-lg text-center">
-        FiloRent; hızlı, güvenilir ve esnek araç kiralama çözümleri sunan modern bir araç kiralama platformudur.
-        </p>
-
-        <p className="mt-4 text-gray-900 leading-relaxed text-lg text-center">
-        Türkiye’nin birçok noktasında bulunan şubelerimiz sayesinde dilediğiniz aracı kolayca kiralayabilir,
-        teslim ve iade işlemlerinizi zahmetsizce tamamlayabilirsiniz. Temiz, bakımlı ve güvenli araçlarımızla
-        keyifli yolculuklar sizi bekliyor.
-        </p>
-
+          <h2 className="text-4xl font-bold mb-6 text-center">
+            FiloRent ile Araç Kiralama Deneyimini Yeniden Tanımlayın
+          </h2>
+          <p className="text-gray-900 leading-relaxed text-lg text-center">
+            FiloRent; hızlı, güvenilir ve esnek araç kiralama çözümleri sunan modern bir araç kiralama platformudur.
+          </p>
+          <p className="mt-4 text-gray-900 leading-relaxed text-lg text-center">
+            Türkiye’nin birçok noktasında bulunan şubelerimiz sayesinde dilediğiniz aracı kolayca kiralayabilir,
+            teslim ve iade işlemlerinizi zahmetsizce tamamlayabilirsiniz. Temiz, bakımlı ve güvenli araçlarımızla
+            keyifli yolculuklar sizi bekliyor.
+          </p>
         </div>
+
+     </div>
+ {/* --- NEDEN FİLORENT --- */}
+<section className="mt-24 text-white">
+  <h2 className="text-3xl font-bold mb-10 text-center">
+    Neden <span className="text-blue-400">FiloRent</span> Araç Kiralama?
+  </h2>
+
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto px-6">
+    {[
+      {
+        title: "Satın Alma Maliyeti Yok",
+        desc: "Peşinat, finansman ya da amortisman yok. Bakım, lastik, MTV gibi giderlerle uğraşmadan aracını kullan.",
+        icon: "🚗",
+      },
+      {
+        title: "İptal Cezası Yok",
+        desc: "Aboneliğini istediğin zaman iptal et, hiçbir ek ücret ödeme. 3 ay içinde yeniden abone ol, avantajlarını koru.",
+        icon: "❌",
+      },
+      {
+        title: "Tamamen Özelleştirilebilir",
+        desc: "Sürüş alışkanlıklarına uygun planı kendin belirle. Ek güvence ve ekipman seçenekleriyle kiralamanı kişiselleştir.",
+        icon: "⚙️",
+      },
+    ].map((item, index) => (
+      <div
+        key={index}
+        className="bg-white/10 hover:bg-white/20 transition p-5 rounded-xl shadow text-center border border-white/10"
+      >
+        <div className="text-3xl mb-3">{item.icon}</div>
+        <h3 className="text-lg font-semibold mb-2 text-blue-300">{item.title}</h3>
+        <p className="text-gray-300 text-sm leading-relaxed">{item.desc}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
+{/* --- SİSTEM NASIL ÇALIŞIR --- */}
+<section className="py-16 mt-20 text-white">
+  <h2 className="text-3xl font-bold text-center mb-12">
+    Sistem Nasıl Çalışır?
+  </h2>
+
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center max-w-6xl mx-auto px-6">
+    {[
+      {
+        title: "Aboneliğini Başlat",
+        desc: "Üye ol, aracını seç, teslim tarihini belirle ve ödemeni yaparak kiralamayı başlat.",
+        icon: "📝",
+      },
+      {
+        title: "Aracını Al",
+        desc: "Seçtiğin FiloRent şubesinden aracını teslim al, yola çık!",
+        icon: "🚘",
+      },
+      {
+        title: "İhtiyacına Göre Güncelle",
+        desc: "Aboneliğini kolayca güncelle. Aracını değiştir veya ek paketler ekle.",
+        icon: "🔁",
+      },
+      {
+        title: "İstediğin Zaman İptal Et",
+        desc: "Aboneliğini istediğin zaman sonlandır, hiçbir iptal ücreti ödeme.",
+        icon: "🕒",
+      },
+    ].map((item, index) => (
+      <div
+        key={index}
+        className="bg-white/10 hover:bg-white/20 transition p-5 rounded-xl shadow text-center border border-white/10"
+      >
+        <div className="text-3xl mb-3">{item.icon}</div>
+        <h3 className="text-lg font-semibold mb-2 text-blue-300">{item.title}</h3>
+        <p className="text-gray-300 text-sm leading-relaxed">{item.desc}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
+
+      
         {/* --- AVANTAJLAR --- */}
 <div className="max-w-6xl mx-auto mt-20 px-6">
   
@@ -167,7 +244,5 @@ export default function Home() {
 
 
   </div>
-
-</div>
   );
 }

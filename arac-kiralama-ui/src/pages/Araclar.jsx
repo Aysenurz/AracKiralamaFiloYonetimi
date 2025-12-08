@@ -43,26 +43,34 @@ export default function Araclar() {
 
             return (
               <div
-                key={arac.aracId}
+                key={arac.modelId}
                 role="button"
                 tabIndex={0}
                 onClick={() =>
                   navigate(
-                    `/rezervasyon?marka=${encodeURIComponent(
+                    `/rezervasyon?id=${arac.modelId}&marka=${encodeURIComponent(
                       arac.marka
                     )}&model=${encodeURIComponent(
                       arac.model
-                    )}&alis=${alis}&donus=${donus}&toplam=${toplam}&resim=${resim}`
+                    )}&segment=${encodeURIComponent(
+                      arac.segment
+                    )}&alis=${alis}&donus=${donus}&fiyat=${
+                      arac.gunlukFiyat
+                    }&resim=${resim}`
                   )
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     navigate(
-                      `/rezervasyon?marka=${encodeURIComponent(
+                      `/rezervasyon?id=${arac.modelId}&marka=${encodeURIComponent(
                         arac.marka
                       )}&model=${encodeURIComponent(
                         arac.model
-                      )}&alis=${alis}&donus=${donus}&toplam=${toplam}&resim=${resim}`
+                      )}&segment=${encodeURIComponent(
+                        arac.segment
+                      )}&alis=${alis}&donus=${donus}&fiyat=${
+                        arac.gunlukFiyat
+                      }&resim=${resim}`
                     );
                   }
                 }}

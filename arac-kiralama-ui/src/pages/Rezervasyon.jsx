@@ -7,12 +7,15 @@ export default function Rezervasyon() {
 
   const marka = params.get("marka");
   const model = params.get("model");
-  const alis = params.get("alis");
-  const donus = params.get("donus");
-  const toplam = Number(params.get("toplam") || 0);
+  const fiyat = Number(params.get("fiyat")) || 0;
   const resim = decodeURIComponent(params.get("resim") || "/car.png");
+  const segment = params.get("segment") || "Belirtilmedi"; // 🔹 Aracın segment bilgisi eklendi
 
-  // Ekstra hizmetler
+  // Tarih state'leri
+  const [alis, setAlis] = useState("");
+  const [donus, setDonus] = useState("");
+
+  // Ekstralar state
   const [extras, setExtras] = useState({
     childSeat: false,
     extraDriver: false,
@@ -25,6 +28,15 @@ export default function Rezervasyon() {
     fullInsurance: 350,
   };
 
+  // Gün sayısı hesaplama
+  const gunSayisi = useMemo(() => {
+    if (!alis || !donus) return 0;
+    const start = new Date(alis);
+    const end = new Date(donus);
+    const diff = (end - start) / (1000 * 60 * 60 * 24);
+    return diff > 0 ? diff : 0;
+  }, [alis, donus]);
+
   const extrasTotal = useMemo(() => {
     return Object.entries(extras).reduce(
       (acc, [k, v]) => (v ? acc + extraPrices[k] : acc),
@@ -32,59 +44,95 @@ export default function Rezervasyon() {
     );
   }, [extras]);
 
-  const grandTotal = toplam + extrasTotal;
+  const grandTotal = gunSayisi * fiyat + extrasTotal;
 
   return (
-    <div className="min-h-screen bg-gray-50 px-10 pt-36 pb-16">
-      <div className="max-w-[90rem] mx-auto">
-        {/* Başlık */}
-        <h1 className="text-5xl font-bold mb-4">Rezervasyon</h1>
-        <p className="text-gray-600 text-lg mb-12">
+    <div className="min-h-screen bg-gray-50 py-24 px-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold mb-2">Rezervasyon</h1>
+        <p className="text-gray-600 mb-8">
           Seçtiğin aracı aşağıdaki bilgilerle rezerve et.
         </p>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-16">
-          {/* Sol taraf: Form & Ekstralar */}
-          <div className="xl:col-span-8 space-y-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Sol taraf */}
+          <div className="lg:col-span-7 space-y-8">
             {/* Araç Özeti */}
-            <div className="bg-white rounded-3xl shadow-md border border-gray-100 p-10">
-              <div className="flex items-center gap-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center gap-4">
                 <img
                   src={resim}
                   alt={`${marka} ${model}`}
-                  className="w-52 h-36 object-cover rounded-2xl"
+                  className="w-28 h-20 object-cover rounded-lg"
                 />
                 <div>
-                  <h2 className="text-3xl font-semibold">
+                  <h2 className="text-xl font-semibold">
                     {marka} {model}
                   </h2>
-                  <p className="text-gray-600 text-xl mt-2">
-                    Alış: <b>{alis || "-"}</b> • Dönüş: <b>{donus || "-"}</b>
+                  <p className="text-gray-600">
+                    Günlük Fiyat:{" "}
+                    <b className="text-blue-600">{fiyat} TL</b>
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Segment: <b>{segment}</b>
                   </p>
                 </div>
               </div>
+
+              {/* Tarih seçimi */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">
+                    Alış Tarihi
+                  </label>
+                  <input
+                    type="date"
+                    value={alis}
+                    onChange={(e) => setAlis(e.target.value)}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">
+                    Dönüş Tarihi
+                  </label>
+                  <input
+                    type="date"
+                    value={donus}
+                    onChange={(e) => setDonus(e.target.value)}
+                    className="input"
+                    min={alis}
+                  />
+                </div>
+              </div>
+
+              {gunSayisi > 0 && (
+                <p className="mt-3 text-gray-600">
+                  Kiralama süresi: <b>{gunSayisi}</b> gün
+                </p>
+              )}
             </div>
 
             {/* Sürücü Bilgileri */}
-            <div className="bg-white rounded-3xl shadow-md border border-gray-100 p-10">
-              <h3 className="font-semibold text-2xl mb-6">Sürücü Bilgileri</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="font-semibold text-lg mb-4">Sürücü Bilgileri</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input className="input" placeholder="Ad" />
                 <input className="input" placeholder="Soyad" />
                 <input className="input" placeholder="E-posta" type="email" />
                 <input className="input" placeholder="Telefon" />
               </div>
-              <p className="text-sm text-gray-500 mt-4">
+              <p className="text-xs text-gray-500 mt-3">
                 * Ehliyet yaşı en az 2 yıl olmalıdır.
               </p>
             </div>
 
             {/* Ekstralar */}
-            <div className="bg-white rounded-3xl shadow-md border border-gray-100 p-10">
-              <h3 className="font-semibold text-2xl mb-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="font-semibold text-lg mb-4">
                 Ekstralar (Opsiyonel)
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[
                   ["childSeat", "Çocuk Koltuğu", extraPrices.childSeat],
                   ["extraDriver", "Ek Sürücü", extraPrices.extraDriver],
@@ -92,80 +140,88 @@ export default function Rezervasyon() {
                 ].map(([key, label, price]) => (
                   <label
                     key={key}
-                    className="flex items-center justify-between border border-gray-200 rounded-xl p-5 hover:bg-gray-50 transition"
+                    className="flex items-center justify-between border border-gray-200 rounded-xl p-3 hover:bg-gray-50"
                   >
-                    <div className="flex items-center gap-4 text-lg">
+                    <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
                         checked={extras[key]}
                         onChange={(e) =>
                           setExtras((s) => ({ ...s, [key]: e.target.checked }))
                         }
-                        className="h-5 w-5"
+                        className="h-4 w-4"
                       />
                       <span>{label}</span>
                     </div>
-                    <span className="font-medium text-lg">{price} TL</span>
+                    <span className="font-medium">{price} TL</span>
                   </label>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Sağ taraf: Ödeme Özeti */}
-          <aside className="xl:col-span-4">
-            <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-10 sticky top-10">
-              <h3 className="font-semibold text-2xl mb-8">Ödeme Özeti</h3>
+          {/* Sağ taraf: Ödeme özeti */}
+          <aside className="lg:col-span-5">
+            <div className="lg:sticky lg:top-8">
+              <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+                <h3 className="font-semibold text-lg mb-4">Ödeme Özeti</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Araç ücreti</span>
+                    <span className="font-medium">
+                      {gunSayisi > 0 ? `${gunSayisi * fiyat} TL` : "0 TL"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Ekstralar</span>
+                    <span className="font-medium">{extrasTotal} TL</span>
+                  </div>
+                  <hr className="my-3" />
+                  <div className="flex justify-between text-base">
+                    <span className="font-semibold">Genel Toplam</span>
+                    <span className="font-extrabold text-blue-600">
+                      {grandTotal} TL
+                    </span>
+                  </div>
+                </div>
 
-              <div className="space-y-3 text-lg">
-                <div className="flex justify-between">
-                  <span>Araç ücreti</span>
-                  <span className="font-medium">{toplam} TL</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Ekstralar</span>
-                  <span className="font-medium">{extrasTotal} TL</span>
-                </div>
-                <hr className="my-4" />
-                <div className="flex justify-between text-xl">
-                  <span className="font-semibold">Genel Toplam</span>
-                  <span className="font-extrabold text-blue-600">
-                    {grandTotal} TL
-                  </span>
-                </div>
+                {/* Ödeme butonu */}
+                <button
+                  disabled={!alis || !donus || gunSayisi === 0}
+                  onClick={() =>
+                    navigate("/odeme", {
+                      state: {
+                        marka,
+                        model,
+                        resim,
+                        toplam: grandTotal,
+                        segment, // 🔹 Kampanya eşleşmesi için
+                        gunSayisi, // 🔹 Erken rezervasyon kampanyası için
+                      },
+                    })
+                  }
+                  className={`mt-6 w-full ${
+                    alis && donus && gunSayisi > 0
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-gray-400 cursor-not-allowed"
+                  } text-white py-3.5 rounded-xl font-semibold transition`}
+                >
+                  Ödemeye Geç
+                </button>
+
+                <p className="text-xs text-gray-500 mt-3">
+                  * Tarih seçimini yaptıktan sonra ödeme sayfasına
+                  geçebilirsiniz.
+                </p>
               </div>
-
-              {/* ✅ Ödemeye yönlendirme */}
-              <button
-                onClick={() =>
-                  navigate("/odeme", {
-                    state: {
-                      marka,
-                      model,
-                      alis,
-                      donus,
-                      toplam: grandTotal,
-                      resim,
-                    },
-                  })
-                }
-                className="mt-10 w-full bg-green-600 hover:bg-green-700 text-white py-5 rounded-2xl font-semibold text-xl transition"
-              >
-                Ödemeye Geç
-              </button>
-
-              <p className="text-sm text-gray-500 mt-5 text-center">
-                * Ödeme sayfasında 3D Secure desteklenir. İptal/iadeler koşullara tabidir.
-              </p>
             </div>
           </aside>
         </div>
       </div>
 
-      {/* Tailwind yardımcı input stili */}
       <style>{`
         .input {
-          @apply w-full rounded-xl border border-gray-300 px-5 py-4 text-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+          @apply w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
         }
       `}</style>
     </div>
