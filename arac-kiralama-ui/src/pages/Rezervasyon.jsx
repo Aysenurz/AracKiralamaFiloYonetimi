@@ -5,17 +5,19 @@ export default function Rezervasyon() {
   const params = new URLSearchParams(useLocation().search);
   const navigate = useNavigate();
 
+  // ✅ Araç bilgileri URL'den alınıyor
+  const aracId = params.get("aracId");
   const marka = params.get("marka");
   const model = params.get("model");
   const fiyat = Number(params.get("fiyat")) || 0;
   const resim = decodeURIComponent(params.get("resim") || "/car.png");
-  const segment = params.get("segment") || "Belirtilmedi"; // 🔹 Aracın segment bilgisi eklendi
+  const segment = params.get("segment") || "Belirtilmedi";
 
-  // Tarih state'leri
+  // ✅ Tarih state'leri
   const [alis, setAlis] = useState("");
   const [donus, setDonus] = useState("");
 
-  // Ekstralar state
+  // ✅ Ekstra hizmetler
   const [extras, setExtras] = useState({
     childSeat: false,
     extraDriver: false,
@@ -28,7 +30,8 @@ export default function Rezervasyon() {
     fullInsurance: 350,
   };
 
-  // Gün sayısı hesaplama
+  // ✅ Kiralama süresi hesaplama
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const gunSayisi = useMemo(() => {
     if (!alis || !donus) return 0;
     const start = new Date(alis);
@@ -37,6 +40,8 @@ export default function Rezervasyon() {
     return diff > 0 ? diff : 0;
   }, [alis, donus]);
 
+  // ✅ Ekstra ücretleri hesaplama
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const extrasTotal = useMemo(() => {
     return Object.entries(extras).reduce(
       (acc, [k, v]) => (v ? acc + extraPrices[k] : acc),
@@ -44,6 +49,7 @@ export default function Rezervasyon() {
     );
   }, [extras]);
 
+  // ✅ Genel toplam
   const grandTotal = gunSayisi * fiyat + extrasTotal;
 
   return (
@@ -57,7 +63,7 @@ export default function Rezervasyon() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Sol taraf */}
           <div className="lg:col-span-7 space-y-8">
-            {/* Araç Özeti */}
+            {/* 🚘 Araç Özeti */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center gap-4">
                 <img
@@ -79,7 +85,7 @@ export default function Rezervasyon() {
                 </div>
               </div>
 
-              {/* Tarih seçimi */}
+              {/* 📅 Tarih seçimi */}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-700 mb-1">
@@ -113,7 +119,7 @@ export default function Rezervasyon() {
               )}
             </div>
 
-            {/* Sürücü Bilgileri */}
+            {/* 👤 Sürücü Bilgileri */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="font-semibold text-lg mb-4">Sürücü Bilgileri</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -127,7 +133,7 @@ export default function Rezervasyon() {
               </p>
             </div>
 
-            {/* Ekstralar */}
+            {/* 🧾 Ekstralar */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h3 className="font-semibold text-lg mb-4">
                 Ekstralar (Opsiyonel)
@@ -160,7 +166,7 @@ export default function Rezervasyon() {
             </div>
           </div>
 
-          {/* Sağ taraf: Ödeme özeti */}
+          {/* 💳 Sağ taraf: Ödeme özeti */}
           <aside className="lg:col-span-5">
             <div className="lg:sticky lg:top-8">
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
@@ -185,7 +191,7 @@ export default function Rezervasyon() {
                   </div>
                 </div>
 
-                {/* Ödeme butonu */}
+                {/* 🟢 Ödeme butonu */}
                 <button
                   disabled={!alis || !donus || gunSayisi === 0}
                   onClick={() =>
@@ -195,8 +201,11 @@ export default function Rezervasyon() {
                         model,
                         resim,
                         toplam: grandTotal,
-                        segment, // 🔹 Kampanya eşleşmesi için
-                        gunSayisi, // 🔹 Erken rezervasyon kampanyası için
+                        segment,
+                        gunSayisi,
+                        aracId, // ✅ Artık tanımlı
+                        alis,   // ✅ Takvimden seçilen tarih
+                        donus,  // ✅ Takvimden seçilen tarih
                       },
                     })
                   }
@@ -210,8 +219,7 @@ export default function Rezervasyon() {
                 </button>
 
                 <p className="text-xs text-gray-500 mt-3">
-                  * Tarih seçimini yaptıktan sonra ödeme sayfasına
-                  geçebilirsiniz.
+                  * Tarih seçimini yaptıktan sonra ödeme sayfasına geçebilirsiniz.
                 </p>
               </div>
             </div>

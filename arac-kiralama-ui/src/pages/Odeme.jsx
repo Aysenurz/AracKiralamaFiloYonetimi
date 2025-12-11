@@ -58,9 +58,9 @@ export default function Odeme() {
     },
   ];
 
-  // Otomatik uygun kupon
+  // ✅ Uygun kuponu otomatik seç
   useEffect(() => {
-    let uygun = kampanyalar.find((k) =>
+    const uygun = kampanyalar.find((k) =>
       gunSayisi > 3
         ? k.kod === "ERKEN15"
         : segment?.toLowerCase() === k.segment.toLowerCase()
@@ -68,6 +68,7 @@ export default function Odeme() {
     if (uygun) setKuponKodu(uygun.kod);
   }, [segment, gunSayisi]);
 
+  // ✅ Kupon uygula
   const uygulaKupon = (kod) => {
     const kampanya = kampanyalar.find((k) => k.kod === kod);
     if (!kampanya) return alert("❌ Geçersiz kupon kodu.");
@@ -92,7 +93,7 @@ export default function Odeme() {
     alert(`🎉 ${kampanya.kod} kuponu başarıyla uygulandı!`);
   };
 
-  // 💳 Kart input kontrolü
+  // 💳 Kart bilgisi değişimi
   const handleChange = (e) => {
     const { name, value } = e.target;
     let newValue = value;
@@ -106,11 +107,22 @@ export default function Odeme() {
     setCardInfo((prev) => ({ ...prev, [name]: newValue }));
   };
 
-  // ✅ Tarih formatı helper
+  // ✅ Tarih formatı düzeltici (UTC sapması olmadan)
   const formatDate = (val) => {
-    if (!val) return new Date().toISOString(); // eğer boşsa bugünü al
+    if (!val) return new Date().toISOString();
+
+    // Eğer "gg.aa.yyyy" formatındaysa parçala
+    if (val.includes(".")) {
+      const [gun, ay, yil] = val.split(".");
+      // Türkiye saatine göre ISO formatı oluştur (UTC farkı olmadan)
+      const localDate = new Date(yil, ay - 1, gun, 12, 0, 0);
+      return localDate.toISOString();
+    }
+
+    // Eğer zaten ISO veya Date objesiyse direkt dönüştür
     const d = new Date(val);
-    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+    if (isNaN(d.getTime())) return new Date().toISOString();
+    return d.toISOString();
   };
 
   // 💾 Ödeme işlemi
@@ -118,9 +130,8 @@ export default function Odeme() {
     e.preventDefault();
 
     try {
-      // ✅ Kullanıcı bilgisi (garantili)
       const kullaniciData = localStorage.getItem("kullanici");
-      let kullanici = { id: 1 }; // fallback
+      let kullanici = { id: 1 };
       if (kullaniciData) {
         try {
           const parsed = JSON.parse(kullaniciData);
@@ -132,22 +143,22 @@ export default function Odeme() {
 
       const kiralama = {
         AracId: Number(aracId) || 1,
-        MusteriId: Number(kullanici.id) || 1, // ✅ null olmaz
+        MusteriId: Number(kullanici.id) || 1,
         AlisSubeId: 1,
         TeslimSubeId: 1,
         AlisTarihi: formatDate(alis),
         TahminiTeslimTarihi: formatDate(donus),
-        GunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)), // ✅ decimal format
+        GunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
         Durum: "Devam Ediyor",
       };
 
-      console.log("📦 Gönderilen kiralama:", JSON.stringify(kiralama, null, 2));
+      console.log("📦 Gönderilen kiralama:", kiralama);
 
-      // ✅ 1️⃣ Kiralama kaydı oluştur
+      // 1️⃣ Kiralama oluştur
       const kiralamaRes = await api.post("/Kiralamalar", kiralama);
       const yeniKiralama = kiralamaRes.data;
 
-      // ✅ 2️⃣ Fatura oluştur (DTO'ya göre sadece KiralamaId ve Tutar gönderiyoruz)
+      // 2️⃣ Fatura oluştur
       const fatura = {
         KiralamaId: yeniKiralama.kiralamaId || yeniKiralama.KiralamaID,
         Tutar: yeniToplam,
@@ -160,11 +171,24 @@ export default function Odeme() {
 
       console.log("✅ Yeni fatura kaydedildi:", yeniFatura);
 
-      // ✅ 3️⃣ Fatura sonucu sayfasına yönlendir
+      // 3️⃣ Yönlendirme
       alert("🎉 Ödeme başarılı! Fatura oluşturuldu.");
+
       navigate("/fatura-sonuc", {
         state: {
-          kiralama: yeniKiralama,
+          kiralama: {
+            ...yeniKiralama,
+            marka,
+            model,
+            yil: new Date(alis).getFullYear(),
+            segment,
+            yakitTipi: segment === "SUV" ? "Dizel" : "Benzin",
+            vitesTipi: "Otomatik",
+            gunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
+            gunSayisi,
+            alisTarihi: formatDate(alis),
+            tahminiTeslimTarihi: formatDate(donus),
+          },
           fatura: yeniFatura,
         },
       });
