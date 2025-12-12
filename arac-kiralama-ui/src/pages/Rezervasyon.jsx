@@ -1,9 +1,19 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Rezervasyon() {
   const params = new URLSearchParams(useLocation().search);
   const navigate = useNavigate();
+
+  // 🔐 Giriş kontrolü
+  useEffect(() => {
+    const user =
+      localStorage.getItem("user") || localStorage.getItem("kullanici");
+    if (!user) {
+      alert("Lütfen araç kiralamadan önce giriş yapınız.");
+      navigate("/giris");
+    }
+  }, [navigate]);
 
   // ✅ Araç bilgileri URL'den alınıyor
   const aracId = params.get("aracId");
@@ -13,9 +23,13 @@ export default function Rezervasyon() {
   const resim = decodeURIComponent(params.get("resim") || "/car.png");
   const segment = params.get("segment") || "Belirtilmedi";
 
-  // ✅ Tarih state'leri
-  const [alis, setAlis] = useState("");
-  const [donus, setDonus] = useState("");
+  // ✅ Ana sayfadan gelen tarihleri al
+  const alisQuery = params.get("alis");
+  const donusQuery = params.get("donus");
+
+  // ✅ Tarihler otomatik dolu gelsin ama değiştirilebilir olsun
+  const [alis, setAlis] = useState(alisQuery || "");
+  const [donus, setDonus] = useState(donusQuery || "");
 
   // ✅ Ekstra hizmetler
   const [extras, setExtras] = useState({
@@ -31,7 +45,6 @@ export default function Rezervasyon() {
   };
 
   // ✅ Kiralama süresi hesaplama
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const gunSayisi = useMemo(() => {
     if (!alis || !donus) return 0;
     const start = new Date(alis);
@@ -41,7 +54,6 @@ export default function Rezervasyon() {
   }, [alis, donus]);
 
   // ✅ Ekstra ücretleri hesaplama
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const extrasTotal = useMemo(() => {
     return Object.entries(extras).reduce(
       (acc, [k, v]) => (v ? acc + extraPrices[k] : acc),
@@ -203,9 +215,9 @@ export default function Rezervasyon() {
                         toplam: grandTotal,
                         segment,
                         gunSayisi,
-                        aracId, // ✅ Artık tanımlı
-                        alis,   // ✅ Takvimden seçilen tarih
-                        donus,  // ✅ Takvimden seçilen tarih
+                        aracId,
+                        alis,
+                        donus,
                       },
                     })
                   }

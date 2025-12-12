@@ -121,7 +121,7 @@ export default function Yardim() {
               </p>
               <p>
                 <span className="font-medium text-gray-900">Telefon:</span>{" "}
-                0850 000 00 00
+                0 (352) 555 55 55
               </p>
               <p>
                 <span className="font-medium text-gray-900">E-posta:</span>{" "}

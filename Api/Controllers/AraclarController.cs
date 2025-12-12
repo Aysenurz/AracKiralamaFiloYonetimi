@@ -37,41 +37,51 @@ namespace Api.Controllers
             return Ok(liste);
         }
 
-        // ✅ TARİH + ŞUBE → UYGUN ARAÇLAR
-        [HttpGet("GetByFilter")]
-        public async Task<IActionResult> GetByFilter(int subeId, string alis, string donus)
-        {
-            if (!DateTime.TryParse(alis, out _))
-                return BadRequest("Alış tarihi hatalı");
+      // ✅ TARİH + ŞUBE → UYGUN ARAÇLAR
+[HttpGet("GetByFilter")]
+public async Task<IActionResult> GetByFilter(int subeId, string alis, string donus)
+{
+    if (!DateTime.TryParse(alis, out DateTime alisTarihi))
+        return BadRequest("Alış tarihi hatalı");
 
-            if (!DateTime.TryParse(donus, out _))
-                return BadRequest("Dönüş tarihi hatalı");
+    if (!DateTime.TryParse(donus, out DateTime donusTarihi))
+        return BadRequest("Dönüş tarihi hatalı");
 
-            var liste = await _context.Araclars
-                .Where(a => a.GuncelSubeId == subeId)
-                .Join(
-                    _context.AracModelBilgileris,
-                    a => a.ModelId,
-                    m => m.ModelId,
-                    (a, m) => new AracDto
-                    {
-                        AracId = a.AracId,
-                        ModelId = m.ModelId,
-                        Marka = m.Marka,
-                        Model = m.Model,
-                        Segment = m.Segment,
-                        YakitTipi = m.YakitTipi,
-                        VitesTipi = m.VitesTipi,
-                        GunlukFiyat = m.GunlukFiyat,
-                        ResimUrl = m.ResimUrl
-                    }
-                )
-                .GroupBy(x => x.ModelId)
-                .Select(g => g.First())
-                .ToListAsync();
+    // 🔹 Seçilen şubedeki araçları getir ama çakışan kiralamaları hariç tut
+    var uygunAraclar = await _context.Araclars
+        .Where(a => a.GuncelSubeId == subeId) // Sadece o şubedeki araçlar
+        .Where(a => !_context.Kiralamalars.Any(k =>
+            k.AracId == a.AracId &&
+            // Tarih aralığı çakışıyorsa hariç tut
+            alisTarihi < k.TahminiTeslimTarihi &&
+            donusTarihi > k.AlisTarihi &&
+            k.Durum == "Devam Ediyor" // Sadece aktif kiralamaları dikkate al
+        ))
+        .Join(
+            _context.AracModelBilgileris,
+            a => a.ModelId,
+            m => m.ModelId,
+            (a, m) => new AracDto
+            {
+                AracId = a.AracId,
+                ModelId = m.ModelId,
+                Marka = m.Marka,
+                Model = m.Model,
+                Segment = m.Segment,
+                YakitTipi = m.YakitTipi,
+                VitesTipi = m.VitesTipi,
+                GunlukFiyat = m.GunlukFiyat,
+                ResimUrl = m.ResimUrl
+            }
+        )
+        // Aynı modelden sadece birini göster (liste sade kalır)
+        .GroupBy(x => x.ModelId)
+        .Select(g => g.First())
+        .ToListAsync();
 
-            return Ok(liste);
-        }
+    return Ok(uygunAraclar);
+}
+
 
         // ✅ MODEL → 1 ADET FİZİKSEL ARAÇ (DETAYA GİTMEK İÇİN)
         [HttpGet("GetOneByModel/{modelId}")]

@@ -1,8 +1,9 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import logo from "../assets/campaigns/logo.jpeg";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const kullanici = JSON.parse(localStorage.getItem("kullanici")); // ✅ En üste aldık
+  const kullanici = JSON.parse(localStorage.getItem("kullanici"));
 
   const handleLogout = () => {
     localStorage.removeItem("kullanici");
@@ -12,18 +13,19 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 w-full bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] shadow-lg z-50">
       <div className="max-w-[90rem] mx-auto px-10 py-5 flex items-center justify-between">
+        
         {/* LOGO */}
         <div
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate("/")}
         >
           <img
-            src="https://e7.pngegg.com/pngimages/50/859/png-clipart-police-car-motor-vehicle-computer-icons-car.png"
-            alt="logo"
-            className="w-11 h-11 object-contain drop-shadow-md rounded-full bg-white p-1"
+            src={logo}
+            alt="ASE Filo"
+            className="h-12 w-auto object-contain drop-shadow-md bg-white rounded-lg p-1"
           />
           <h1 className="text-2xl font-extrabold text-white tracking-wide">
-            <span className="text-blue-400">Filo</span>Rent
+            <span className="text-blue-400">ASE</span> Rent a Car
           </h1>
         </div>
 
@@ -51,7 +53,7 @@ export default function Navbar() {
             </NavLink>
           ))}
 
-          {/* SAĞ TARAF: GİRİŞ / ÜYE OL veya PROFİL / ÇIKIŞ */}
+          {/* SAĞ TARAF */}
           <div className="flex items-center gap-3 ml-6">
             {!kullanici ? (
               <>

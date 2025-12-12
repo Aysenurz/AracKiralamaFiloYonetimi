@@ -119,8 +119,6 @@ export default function Home() {
   </div>
 </section>
 
-
-      
         {/* --- AVANTAJLAR --- */}
 <div className="max-w-6xl mx-auto mt-20 px-6">
   
