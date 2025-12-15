@@ -5,11 +5,13 @@ import api from "../services/api";
 export default function Profil() {
   const navigate = useNavigate();
   const [faturalar, setFaturalar] = useState([]);
+  const [kiralamalar, setKiralamalar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [kullanici, setKullanici] = useState(null);
-  const [seciliFatura, setSeciliFatura] = useState(null); // 💡 Modal için seçili fatura
+  const [seciliFatura, setSeciliFatura] = useState(null);
   const printRef = useRef();
 
+  // 🔹 Kullanıcıyı localStorage'dan al
   useEffect(() => {
     const veri = localStorage.getItem("kullanici");
     if (veri) {
@@ -19,6 +21,7 @@ export default function Profil() {
     }
   }, [navigate]);
 
+  // 🔹 Faturaları getir
   useEffect(() => {
     const getirFaturalar = async () => {
       if (!kullanici) return;
@@ -37,6 +40,36 @@ export default function Profil() {
     };
     getirFaturalar();
   }, [kullanici]);
+
+  // 🔹 Kiralamaları getir
+  useEffect(() => {
+  if (!kullanici) return;
+
+  const musteriId = kullanici.musteriId || kullanici.id;
+  console.log("📦 Profil sayfasındaki müşteri ID:", musteriId);
+
+  const getirKiralamalar = async () => {
+    try {
+      const res = await api.get("/Kiralamalar");
+
+      // ⬇️ BACKEND pagination döndüğü için items kullanıyoruz
+      const tumKiralamalar = res.data.items || res.data;
+
+      // ⬇️ FRONTEND filtreleme
+      const benimKiralamalarim = tumKiralamalar.filter(
+        (k) => k.musteriId === musteriId
+      );
+
+      console.log("📊 Filtrelenmiş kiralamalar:", benimKiralamalarim);
+      setKiralamalar(benimKiralamalarim);
+    } catch (err) {
+      console.error("❌ Kiralamalar alınamadı:", err);
+    }
+  };
+
+  getirKiralamalar();
+}, [kullanici]);
+
 
   const handleLogout = () => {
     localStorage.removeItem("kullanici");
@@ -57,10 +90,14 @@ export default function Profil() {
   };
 
   if (!kullanici)
-    return <div className="flex justify-center items-center min-h-screen text-gray-600">Yükleniyor...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen text-gray-600">
+        Yükleniyor...
+      </div>
+    );
 
   return (
-   <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 py-12 pt-28">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 py-12 pt-28">
       {/* 🔹 Kullanıcı Bilgileri */}
       <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-3xl mb-10">
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-8">
@@ -91,8 +128,8 @@ export default function Profil() {
         </div>
       </div>
 
-      {/* 🔹 Faturalarım */}
-      <div ref={printRef} className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-4xl">
+      {/* 💰 Faturalarım */}
+      <div ref={printRef} className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-4xl mb-12">
         <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
           💰 Faturalarım
         </h2>
@@ -129,7 +166,7 @@ export default function Profil() {
                   </td>
                   <td className="py-3 px-6">
                     <button
-                      onClick={() => setSeciliFatura(fatura)} // 💎 Modal aç
+                      onClick={() => setSeciliFatura(fatura)}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm"
                     >
                       Görüntüle
@@ -141,6 +178,61 @@ export default function Profil() {
           </table>
         )}
       </div>
+
+     {/* 🚗 Kiralamalarım */}
+<div className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-4xl">
+  <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+    🚗 Kiralamalarım
+  </h2>
+
+  {kiralamalar.length === 0 ? (
+    <p className="text-center text-gray-500 text-lg">
+      Henüz bir kiralama geçmişiniz bulunmamaktadır.
+    </p>
+  ) : (
+    <table className="w-full border-collapse border border-gray-300">
+      <thead>
+        <tr className="bg-blue-600 text-white text-lg">
+          <th className="border p-3">Araç</th>
+          <th className="border p-3">Alış Tarihi</th>
+          <th className="border p-3">Teslim Tarihi</th>
+          <th className="border p-3">Durum</th>
+        </tr>
+      </thead>
+      <tbody>
+        {kiralamalar.map((k) => (
+          <tr key={k.kiralamaId} className="hover:bg-gray-50">
+            <td className="border p-3">
+              {k.marka} {k.model} ({k.arac})
+            </td>
+            <td className="border p-3">
+              {k.alisTarihi ? k.alisTarihi.split("T")[0] : "-"}
+            </td>
+            <td className="border p-3">
+              {k.gercekTeslimTarihi
+                ? k.gercekTeslimTarihi.split("T")[0]
+                : k.tahminiTeslimTarihi
+                ? k.tahminiTeslimTarihi.split("T")[0]
+                : "-"}
+            </td>
+            <td
+              className={`border p-3 font-semibold ${
+                k.durum === "Kirada"
+                  ? "text-yellow-600"
+                  : k.durum === "Aktif"
+                  ? "text-green-600"
+                  : "text-gray-500"
+              }`}
+            >
+              {k.durum}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
 
       {/* 🖨️ Yazdır Butonu */}
       {faturalar.length > 0 && (

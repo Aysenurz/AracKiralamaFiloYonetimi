@@ -16,12 +16,13 @@ export default function Rezervasyon() {
   }, [navigate]);
 
   // ✅ Araç bilgileri URL'den alınıyor
-  const aracId = params.get("aracId");
+  const aracId = params.get("aracId") || params.get("id");
   const marka = params.get("marka");
   const model = params.get("model");
   const fiyat = Number(params.get("fiyat")) || 0;
   const resim = decodeURIComponent(params.get("resim") || "/car.png");
   const segment = params.get("segment") || "Belirtilmedi";
+  const subeId = params.get("subeId"); // ✅ SADECE BU SATIR EKLENDİ
 
   // ✅ Ana sayfadan gelen tarihleri al
   const alisQuery = params.get("alis");
@@ -209,15 +210,16 @@ export default function Rezervasyon() {
                   onClick={() =>
                     navigate("/odeme", {
                       state: {
+                        aracId: Number(aracId),
                         marka,
                         model,
                         resim,
                         toplam: grandTotal,
                         segment,
                         gunSayisi,
-                        aracId,
                         alis,
                         donus,
+                        subeId: Number(subeId),
                       },
                     })
                   }

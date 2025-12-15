@@ -85,28 +85,50 @@ namespace Api.Controllers
         // ----------------------------------------------------------------
         // POST (Create)
         // ----------------------------------------------------------------
-        [HttpPost]
-        public async Task<IActionResult> Create(KiralamaDto dto)
+       [HttpPost]
+public async Task<IActionResult> Create([FromBody] KiralamaCreateDto dto)
+{
+    try
+    {
+        if (dto == null)
+            return BadRequest("Kiralama verisi boş.");
+
+        if (dto.MusteriId <= 0)
+            return BadRequest("Geçersiz müşteri.");
+
+        if (dto.AracId <= 0)
+            return BadRequest("Geçersiz araç.");
+
+        if (dto.AlisSubeId <= 0 || dto.TeslimSubeId <= 0)
+            return BadRequest("Şube bilgisi geçersiz.");
+
+        if (dto.AlisTarihi == default || dto.TahminiTeslimTarihi == default)
+            return BadRequest("Tarih bilgileri geçersiz.");
+
+        var entity = new Kiralamalar
         {
-            var entity = new Kiralamalar
-            {
-                AracId = dto.AracId,
-                MusteriId = dto.MusteriId,
-                AlisSubeId = dto.AlisSubeId,
-                TeslimSubeId = dto.TeslimSubeId,
-                AlisTarihi = dto.AlisTarihi,
-                TahminiTeslimTarihi = dto.TahminiTeslimTarihi,
-                GercekTeslimTarihi = dto.GercekTeslimTarihi,
-                GunlukUcret = dto.GunlukUcret,
-                Durum = dto.Durum
-            };
+            MusteriId = dto.MusteriId,
+            AracId = dto.AracId,
+            AlisSubeId = dto.AlisSubeId,
+            TeslimSubeId = dto.TeslimSubeId,
+            AlisTarihi = dto.AlisTarihi,
+            TahminiTeslimTarihi = dto.TahminiTeslimTarihi,
+            GunlukUcret = dto.GunlukUcret,
+            Durum = "Devam Ediyor"
+        };
 
-            _context.Kiralamalars.Add(entity);
-            await _context.SaveChangesAsync();
+        _context.Kiralamalars.Add(entity);
+        await _context.SaveChangesAsync();
 
-            dto.KiralamaId = entity.KiralamaId;
-            return Ok(dto);
-        }
+        return Ok(entity);
+    }
+    catch (Exception ex)
+    {
+        // 🔥 ARTIK GERÇEK HATAYI GÖRECEĞİZ
+        return StatusCode(500, ex.InnerException?.Message ?? ex.Message);
+    }
+}
+
 
         // ----------------------------------------------------------------
         // PUT (Update)

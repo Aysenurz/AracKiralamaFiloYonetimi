@@ -16,6 +16,7 @@ export default function Odeme() {
     alis,
     donus,
     aracId,
+    subeId
   } = state || {};
 
   const [cardInfo, setCardInfo] = useState({
@@ -30,7 +31,6 @@ export default function Odeme() {
   const [indirim, setIndirim] = useState(0);
   const [yeniToplam, setYeniToplam] = useState(orijinalTutar);
 
-  // ✅ Kampanyalar
   const kampanyalar = [
     {
       kod: "SUV20",
@@ -58,7 +58,6 @@ export default function Odeme() {
     },
   ];
 
-  // ✅ Uygun kuponu otomatik seç
   useEffect(() => {
     const uygun = kampanyalar.find((k) =>
       gunSayisi > 3
@@ -68,7 +67,6 @@ export default function Odeme() {
     if (uygun) setKuponKodu(uygun.kod);
   }, [segment, gunSayisi]);
 
-  // ✅ Kupon uygula
   const uygulaKupon = (kod) => {
     const kampanya = kampanyalar.find((k) => k.kod === kod);
     if (!kampanya) return alert("❌ Geçersiz kupon kodu.");
@@ -77,9 +75,7 @@ export default function Odeme() {
       kampanya.segment.toLowerCase() !== "hepsi" &&
       kampanya.segment.toLowerCase() !== segment?.toLowerCase()
     ) {
-      return alert(
-        `❌ Bu kupon yalnızca ${kampanya.segment} segmentindeki araçlarda geçerlidir.`
-      );
+      return alert(`❌ Bu kupon yalnızca ${kampanya.segment} segmentinde geçerli.`);
     }
 
     const indirimTutari =
@@ -90,10 +86,8 @@ export default function Odeme() {
     setIndirim(indirimTutari);
     setYeniToplam(orijinalTutar - indirimTutari);
     setUygulananKupon(kampanya);
-    alert(`🎉 ${kampanya.kod} kuponu başarıyla uygulandı!`);
   };
 
-  // 💳 Kart bilgisi değişimi
   const handleChange = (e) => {
     const { name, value } = e.target;
     let newValue = value;
@@ -107,97 +101,66 @@ export default function Odeme() {
     setCardInfo((prev) => ({ ...prev, [name]: newValue }));
   };
 
-  // ✅ Tarih formatı düzeltici (UTC sapması olmadan)
   const formatDate = (val) => {
     if (!val) return new Date().toISOString();
-
-    // Eğer "gg.aa.yyyy" formatındaysa parçala
-    if (val.includes(".")) {
-      const [gun, ay, yil] = val.split(".");
-      // Türkiye saatine göre ISO formatı oluştur (UTC farkı olmadan)
-      const localDate = new Date(yil, ay - 1, gun, 12, 0, 0);
-      return localDate.toISOString();
-    }
-
-    // Eğer zaten ISO veya Date objesiyse direkt dönüştür
     const d = new Date(val);
-    if (isNaN(d.getTime())) return new Date().toISOString();
-    return d.toISOString();
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
   };
 
-  // 💾 Ödeme işlemi
+  console.log("🏢 SUBE ID:", subeId);
+
+  // ✅ ASIL HATA BURADAYDI → ŞİMDİ DÜZGÜN
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const kullaniciData = localStorage.getItem("kullanici");
-      let kullanici = { id: 1 };
-      if (kullaniciData) {
-        try {
-          const parsed = JSON.parse(kullaniciData);
-          if (parsed?.id) kullanici = parsed;
-        } catch {
-          console.warn("⚠️ Kullanıcı JSON parse edilemedi, id:1 kullanılacak");
-        }
+      if (!kullaniciData) {
+        alert("Lütfen giriş yapınız");
+        return;
       }
 
+      const kullanici = JSON.parse(kullaniciData);
+      const musteriId = kullanici.musteriId || kullanici.id;
+
       const kiralama = {
-        AracId: Number(aracId) || 1,
-        MusteriId: Number(kullanici.id) || 1,
-        AlisSubeId: 1,
-        TeslimSubeId: 1,
+        MusteriId: Number(musteriId),
+        AracId: Number(aracId),
+        AlisSubeId: Number(subeId),
+        TeslimSubeId: Number(subeId),
         AlisTarihi: formatDate(alis),
         TahminiTeslimTarihi: formatDate(donus),
         GunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
-        Durum: "Devam Ediyor",
       };
 
-      console.log("📦 Gönderilen kiralama:", kiralama);
-
-      // 1️⃣ Kiralama oluştur
       const kiralamaRes = await api.post("/Kiralamalar", kiralama);
       const yeniKiralama = kiralamaRes.data;
 
-      // 2️⃣ Fatura oluştur
-      const fatura = {
-        KiralamaId: yeniKiralama.kiralamaId || yeniKiralama.KiralamaID,
+      const faturaRes = await api.post("/Faturalar", {
+        KiralamaId: yeniKiralama.kiralamaId || yeniKiralama.KiralamaId,
         Tutar: yeniToplam,
-      };
-
-      console.log("📄 Fatura gönderiliyor:", fatura);
-
-      const faturaRes = await api.post("/Faturalar", fatura);
-      const yeniFatura = faturaRes.data;
-
-      console.log("✅ Yeni fatura kaydedildi:", yeniFatura);
-
-      // 3️⃣ Yönlendirme
-      alert("🎉 Ödeme başarılı! Fatura oluşturuldu.");
+      });
 
       navigate("/fatura-sonuc", {
         state: {
+          fatura: faturaRes.data,
           kiralama: {
             ...yeniKiralama,
             marka,
             model,
-            yil: new Date(alis).getFullYear(),
             segment,
-            yakitTipi: segment === "SUV" ? "Dizel" : "Benzin",
-            vitesTipi: "Otomatik",
-            gunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
             gunSayisi,
+            gunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
             alisTarihi: formatDate(alis),
             tahminiTeslimTarihi: formatDate(donus),
           },
-          fatura: yeniFatura,
         },
       });
     } catch (err) {
       console.error("❌ Hata:", err);
-      alert("❌ İşlem başarısız. Lütfen tekrar deneyin.");
+      alert("❌ İşlem başarısız");
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-8 py-16">
       <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[90rem] p-16">

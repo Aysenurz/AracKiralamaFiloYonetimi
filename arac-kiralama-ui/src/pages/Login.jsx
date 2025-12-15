@@ -13,11 +13,19 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // ✅ Burada /api yazmıyoruz çünkü api.js zaten baseURL olarak /api içeriyor
       const res = await api.post("/Musteriler/login", form);
 
       alert(`🎉 Hoş geldin ${res.data.adSoyad || res.data.musteri?.adSoyad || "Kullanıcı"}!`);
-      localStorage.setItem("kullanici", JSON.stringify(res.data)); // Kullanıcıyı localStorage’a kaydet
+
+      // 💎 GÜNCELLENEN KISIM: musteriId düzeltmesi
+      localStorage.setItem(
+        "kullanici",
+        JSON.stringify({
+          ...res.data,
+          musteriId: res.data.musteriId || res.data.id || 1, // fallback ekledik
+        })
+      );
+
       navigate("/"); // Ana sayfaya yönlendir
     } catch (err) {
       console.error("❌ Giriş hatası:", err);

@@ -120,18 +120,19 @@ export default function Araclar() {
                 role="button"
                 tabIndex={0}
                 onClick={() =>
-                  navigate(
-                    `/rezervasyon?id=${arac.modelId}&marka=${encodeURIComponent(
-                      arac.marka
-                    )}&model=${encodeURIComponent(
-                      arac.model
-                    )}&segment=${encodeURIComponent(
-                      arac.segment
-                    )}&alis=${alis}&donus=${donus}&fiyat=${
-                      arac.gunlukFiyat
-                    }&resim=${resim}`
-                  )
-                }
+  navigate(
+    `/rezervasyon?id=${arac.modelId}&marka=${encodeURIComponent(
+      arac.marka
+    )}&model=${encodeURIComponent(
+      arac.model
+    )}&segment=${encodeURIComponent(
+      arac.segment
+    )}&alis=${alis}&donus=${donus}&subeId=${subeId}&fiyat=${
+      arac.gunlukFiyat
+    }&resim=${resim}`
+  )
+}
+
                 className="bg-white rounded-xl shadow p-4 flex flex-col cursor-pointer hover:shadow-lg transition"
               >
                 <img
