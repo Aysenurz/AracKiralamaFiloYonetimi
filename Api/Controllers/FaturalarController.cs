@@ -77,24 +77,28 @@ namespace Api.Controllers
         // POST - Create
         // ---------------------------------------------------------
         [HttpPost]
-        public async Task<IActionResult> Create(FaturaCreateDto dto)
-        {
-            var entity = new Faturalar
-            {
-                KiralamaId = dto.KiralamaId,
-                Tutar = dto.Tutar,
-                FaturaTarihi = DateTime.Now
-            };
+public async Task<IActionResult> Create(FaturaCreateDto dto)
+{
+    var entity = new Faturalar
+    {
+        
+        KiralamaId = dto.KiralamaId,
+        Tutar = dto.Tutar,
+        FaturaTarihi = DateTime.Now
+    };
 
-            _context.Faturalars.Add(entity);
-            await _context.SaveChangesAsync();
+    _context.Faturalars.Add(entity);
+    await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                message = "Fatura oluşturuldu.",
-                entity
-            });
-        }
+    return Ok(new
+    {
+        FaturaId = entity.FaturaId,
+        KiralamaId = entity.KiralamaId,
+        Tutar = entity.Tutar,
+        FaturaTarihi = entity.FaturaTarihi
+    });
+}
+
 
         // ---------------------------------------------------------
         // PUT - Update
@@ -132,6 +136,27 @@ namespace Api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Silindi" });
+
+            
         }
+
+        [HttpGet("musteri/{musteriId}")]
+public async Task<IActionResult> GetFaturalarByMusteri(int musteriId)
+{
+    var faturalar = await _context.Faturalars
+        .Include(f => f.Kiralama)
+        .Where(f => f.Kiralama.MusteriId == musteriId)
+        .Select(f => new
+        {
+            f.FaturaId,
+            f.KiralamaId,
+            f.Tutar,
+            f.FaturaTarihi
+        })
+        .ToListAsync();
+
+    return Ok(faturalar);
+}
+
     }
 }

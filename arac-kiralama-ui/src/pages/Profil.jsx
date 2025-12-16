@@ -23,23 +23,25 @@ export default function Profil() {
 
   // 🔹 Faturaları getir
   useEffect(() => {
-    const getirFaturalar = async () => {
-      if (!kullanici) return;
-      try {
-        const res = await api.get("/Faturalar");
-        const tumFaturalar = res.data.items || res.data;
-        const benimFaturalarim = tumFaturalar.filter(
-          (f) => f.kiralamaId === kullanici.id || f.KiralamaId === kullanici.id
-        );
-        setFaturalar(benimFaturalarim);
-      } catch (err) {
-        console.error("❌ Faturalar alınamadı:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    getirFaturalar();
-  }, [kullanici]);
+  const getirFaturalar = async () => {
+    if (!kullanici || !kullanici.musteriId) return;
+
+    try {
+      const res = await api.get(
+        `/Faturalar/musteri/${kullanici.musteriId}`
+      );
+
+      setFaturalar(res.data); // 🔥 backend zaten filtreli
+    } catch (err) {
+      console.error("❌ Faturalar alınamadı:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  getirFaturalar();
+}, [kullanici]);
+
 
   // 🔹 Kiralamaları getir
   useEffect(() => {

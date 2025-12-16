@@ -15,5 +15,8 @@ namespace Api.Models.Dto
         public decimal? GunlukUcret { get; set; }
 
         public string? Durum { get; set; }
+
+        public string? Marka { get; set; }
+    public string? Model { get; set; }
     }
 }

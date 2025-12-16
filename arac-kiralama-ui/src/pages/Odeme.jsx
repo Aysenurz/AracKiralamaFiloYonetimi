@@ -110,57 +110,94 @@ export default function Odeme() {
   console.log("🏢 SUBE ID:", subeId);
 
   // ✅ ASIL HATA BURADAYDI → ŞİMDİ DÜZGÜN
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const kullaniciData = localStorage.getItem("kullanici");
-      if (!kullaniciData) {
-        alert("Lütfen giriş yapınız");
-        return;
-      }
-
-      const kullanici = JSON.parse(kullaniciData);
-      const musteriId = kullanici.musteriId || kullanici.id;
-
-      const kiralama = {
-        MusteriId: Number(musteriId),
-        AracId: Number(aracId),
-        AlisSubeId: Number(subeId),
-        TeslimSubeId: Number(subeId),
-        AlisTarihi: formatDate(alis),
-        TahminiTeslimTarihi: formatDate(donus),
-        GunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
-      };
-
-      const kiralamaRes = await api.post("/Kiralamalar", kiralama);
-      const yeniKiralama = kiralamaRes.data;
-
-      const faturaRes = await api.post("/Faturalar", {
-        KiralamaId: yeniKiralama.kiralamaId || yeniKiralama.KiralamaId,
-        Tutar: yeniToplam,
-      });
-
-      navigate("/fatura-sonuc", {
-        state: {
-          fatura: faturaRes.data,
-          kiralama: {
-            ...yeniKiralama,
-            marka,
-            model,
-            segment,
-            gunSayisi,
-            gunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
-            alisTarihi: formatDate(alis),
-            tahminiTeslimTarihi: formatDate(donus),
-          },
-        },
-      });
-    } catch (err) {
-      console.error("❌ Hata:", err);
-      alert("❌ İşlem başarısız");
+  try {
+    const kullaniciData = localStorage.getItem("kullanici");
+    if (!kullaniciData) {
+      alert("Lütfen giriş yapınız");
+      return;
     }
-  };
+
+    const kullanici = JSON.parse(kullaniciData);
+    const musteriId = kullanici.musteriId || kullanici.id;
+
+    // 1️⃣ Kiralama oluştur
+    const kiralama = {
+      MusteriId: Number(musteriId),
+      AracId: Number(aracId),
+      AlisSubeId: Number(subeId),
+      TeslimSubeId: Number(subeId),
+      AlisTarihi: formatDate(alis),
+      TahminiTeslimTarihi: formatDate(donus),
+      GunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
+    };
+
+    const kiralamaRes = await api.post("/Kiralamalar", kiralama);
+    const yeniKiralama = kiralamaRes.data;
+
+    // 2️⃣ Fatura oluştur
+const faturaRes = await api.post("/Faturalar", {
+  KiralamaId: yeniKiralama.kiralamaId || yeniKiralama.KiralamaId,
+  Tutar: yeniToplam,
+});
+
+const yeniFaturaDuzenli = faturaRes.data; // 🔥 BU SATIR EKSİKTİ
+
+
+    // 3️⃣ STATE’LER
+    const kiralamaState = {
+      ...yeniKiralama,
+      marka,
+      model,
+      yil: new Date(alis).getFullYear(),
+      segment,
+      yakitTipi: segment === "SUV" ? "Dizel" : "Benzin",
+      vitesTipi: "Otomatik",
+      gunlukUcret: Number((yeniToplam / gunSayisi).toFixed(2)),
+      gunSayisi,
+      alisTarihi: formatDate(alis),
+      tahminiTeslimTarihi: formatDate(donus),
+    };
+
+   const faturaState = {
+  faturaId:
+    yeniFaturaDuzenli.faturaId ??
+    yeniFaturaDuzenli.FaturaId,
+
+  kiralamaId:
+    yeniFaturaDuzenli.kiralamaId ??
+    yeniFaturaDuzenli.KiralamaId ??
+    yeniKiralama.kiralamaId ??
+    yeniKiralama.KiralamaId,
+
+  tutar:
+    yeniFaturaDuzenli.tutar ??
+    yeniFaturaDuzenli.Tutar ??
+    yeniToplam,
+
+  faturaTarihi:
+    yeniFaturaDuzenli.faturaTarihi ??
+    yeniFaturaDuzenli.FaturaTarihi ??
+    new Date().toISOString(),
+};
+
+
+    // 4️⃣ Yönlendir
+    navigate("/fatura-sonuc", {
+      state: {
+        kiralama: kiralamaState,
+        fatura: faturaState,
+      },
+    });
+
+  } catch (err) {
+    console.error("❌ Ödeme hatası:", err);
+    alert("Ödeme sırasında hata oluştu");
+  }
+};
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-8 py-16">
       <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-[90rem] p-16">

@@ -17,43 +17,51 @@ namespace Api.Controllers
         }
 
         // ----------------------------------------------------------------
-        // GET (Pagination)
-        // ----------------------------------------------------------------
-        [HttpGet]
-        public async Task<IActionResult> GetAll(int page = 1, int pageSize = 50)
+       // ----------------------------------------------------------------
+// GET (Pagination)
+// ----------------------------------------------------------------
+[HttpGet]
+public async Task<IActionResult> GetAll(int page = 1, int pageSize = 50)
+{
+    var query = _context.Kiralamalars
+        .Include(x => x.Arac)   // 🔥 ARAÇ TABLOSU İLE JOIN
+        .AsNoTracking();
+
+    var totalCount = await query.CountAsync();
+
+    var items = await query
+        .OrderBy(x => x.KiralamaId)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .Select(x => new KiralamaDto
         {
-            var query = _context.Kiralamalars.AsNoTracking();
+            KiralamaId = x.KiralamaId,
+            AracId = x.AracId,
+            MusteriId = x.MusteriId,
+            AlisSubeId = x.AlisSubeId,
+            TeslimSubeId = x.TeslimSubeId,
+            AlisTarihi = x.AlisTarihi,
+            TahminiTeslimTarihi = x.TahminiTeslimTarihi,
+            GercekTeslimTarihi = x.GercekTeslimTarihi,
+            GunlukUcret = x.GunlukUcret,
+            Durum = x.Durum,
 
-            var totalCount = await query.CountAsync();
+            // 🔥 ARAÇ BİLGİLERİ (ARTIK GELİR)
+            Marka = x.Arac.Model.Marka,
+            Model = x.Arac.Model.Model
+        })
+        .ToListAsync();
 
-            var items = await query
-                .OrderBy(x => x.KiralamaId)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new KiralamaDto
-                {
-                    KiralamaId = x.KiralamaId,
-                    AracId = x.AracId,
-                    MusteriId = x.MusteriId,
-                    AlisSubeId = x.AlisSubeId,
-                    TeslimSubeId = x.TeslimSubeId,
-                    AlisTarihi = x.AlisTarihi,
-                    TahminiTeslimTarihi = x.TahminiTeslimTarihi,
-                    GercekTeslimTarihi = x.GercekTeslimTarihi,
-                    GunlukUcret = x.GunlukUcret,
-                    Durum = x.Durum
-                })
-                .ToListAsync();
+    return Ok(new
+    {
+        page,
+        pageSize,
+        totalCount,
+        totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+        items
+    });
+}
 
-            return Ok(new
-            {
-                page,
-                pageSize,
-                totalCount,
-                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
-                items
-            });
-        }
 
         // ----------------------------------------------------------------
         // GET /api/Kiralamalar/{id}

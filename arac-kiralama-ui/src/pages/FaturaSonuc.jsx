@@ -25,9 +25,12 @@ export default function FaturaSonuc() {
   const faturaId = fatura.faturaId || fatura.FaturaId;
   const kiralamaId = fatura.kiralamaId || fatura.KiralamaId;
   const tutar = fatura.tutar || fatura.Tutar;
-  const faturaTarihi = new Date(
-    fatura.faturaTarihi || fatura.FaturaTarihi
-  ).toLocaleString("tr-TR");
+ const rawFaturaTarihi =
+  fatura?.faturaTarihi || fatura?.FaturaTarihi;
+
+const faturaTarihi = rawFaturaTarihi
+  ? new Date(rawFaturaTarihi).toLocaleString("tr-TR")
+  : "-";
 
   // ✅ Tarihleri Türkiye saatine sabitleyen fonksiyon
   const formatLocalDate = (isoString) => {
