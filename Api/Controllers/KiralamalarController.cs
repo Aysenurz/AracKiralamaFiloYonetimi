@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Models;
 using Api.Models.Dto;
+using Microsoft.Data.SqlClient;
 
 namespace Api.Controllers
 {
@@ -24,7 +25,8 @@ namespace Api.Controllers
 public async Task<IActionResult> GetAll(int page = 1, int pageSize = 50)
 {
     var query = _context.Kiralamalars
-        .Include(x => x.Arac)   // 🔥 ARAÇ TABLOSU İLE JOIN
+        .Include(x => x.Arac)
+            .ThenInclude(a => a.Model) // 🔥 EKSİK OLAN BUYDU
         .AsNoTracking();
 
     var totalCount = await query.CountAsync();
@@ -46,9 +48,9 @@ public async Task<IActionResult> GetAll(int page = 1, int pageSize = 50)
             GunlukUcret = x.GunlukUcret,
             Durum = x.Durum,
 
-            // 🔥 ARAÇ BİLGİLERİ (ARTIK GELİR)
-            Marka = x.Arac.Model.Marka,
-            Model = x.Arac.Model.Model
+            // 🔥 ARTIK ÇALIŞIR
+            Marka = x.Arac != null ? x.Arac.Model.Marka : null,
+            Model = x.Arac != null ? x.Arac.Model.Model : null
         })
         .ToListAsync();
 
@@ -160,6 +162,22 @@ public async Task<IActionResult> Create([FromBody] KiralamaCreateDto dto)
             await _context.SaveChangesAsync();
             return Ok(dto);
         }
+
+// ----------------------------------------------------------------
+// PUT /api/Kiralamalar/{id}/teslim-et
+// ----------------------------------------------------------------
+[HttpPut("{id}/teslim-et")]
+public async Task<IActionResult> TeslimEt(int id)
+{
+    await _context.Database.ExecuteSqlRawAsync(
+        "EXEC OPERASYON.sp_TeslimEt @KiralamaId",
+        new SqlParameter("@KiralamaId", id)
+    );
+
+    return Ok(new { message = "Araç teslim edildi." });
+}
+
+
 
         // ----------------------------------------------------------------
         // DELETE

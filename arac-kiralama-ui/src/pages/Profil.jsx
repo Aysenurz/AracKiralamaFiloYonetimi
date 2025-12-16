@@ -42,6 +42,36 @@ export default function Profil() {
   getirFaturalar();
 }, [kullanici]);
 
+const teslimEt = async (kiralamaId) => {
+  if (!window.confirm("Aracı teslim etmek istediğinize emin misiniz?")) return;
+
+  try {
+    const res = await api.put(`/Kiralamalar/${kiralamaId}/teslim-et`);
+    console.log("✅ Teslim cevap:", res.data);
+
+    setKiralamalar((prev) =>
+      prev.map((k) =>
+        k.kiralamaId === kiralamaId ? { ...k, durum: "Tamamlandı" } : k
+      )
+    );
+
+    alert("Araç teslim edildi.");
+  } catch (err) {
+    // ✅ BURASI ASIL HATAYI GÖSTERİR
+    console.log("❌ Teslim error obj:", err);
+    console.log("❌ Status:", err?.response?.status);
+    console.log("❌ Data:", err?.response?.data);
+
+    const mesaj =
+      err?.response?.data?.message ||
+      err?.response?.data ||
+      err?.message ||
+      "Bilinmeyen hata";
+
+    alert("Teslim hatası: " + mesaj);
+  }
+};
+
 
   // 🔹 Kiralamaları getir
   useEffect(() => {
@@ -205,7 +235,7 @@ export default function Profil() {
         {kiralamalar.map((k) => (
           <tr key={k.kiralamaId} className="hover:bg-gray-50">
             <td className="border p-3">
-              {k.marka} {k.model} ({k.arac})
+              {k.marka} {k.model} 
             </td>
             <td className="border p-3">
               {k.alisTarihi ? k.alisTarihi.split("T")[0] : "-"}
@@ -217,17 +247,20 @@ export default function Profil() {
                 ? k.tahminiTeslimTarihi.split("T")[0]
                 : "-"}
             </td>
-            <td
-              className={`border p-3 font-semibold ${
-                k.durum === "Kirada"
-                  ? "text-yellow-600"
-                  : k.durum === "Aktif"
-                  ? "text-green-600"
-                  : "text-gray-500"
-              }`}
-            >
-              {k.durum}
-            </td>
+            <td className="border p-3 font-semibold">
+  {k.durum}
+
+  {k.durum === "Devam Ediyor" && (
+    <button
+      onClick={() => teslimEt(k.kiralamaId)}
+      className="ml-4 bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded-lg text-sm"
+    >
+      Teslim Et
+    </button>
+  )}
+</td>
+
+
           </tr>
         ))}
       </tbody>
